@@ -1045,6 +1045,7 @@ namespace server
         int connectauth;
         uint authreq, localmasterreq;
         vector<char *> groups;
+        uint uid;
         string localauthname, authname, localauthdesc, authdesc;
         void *authchallenge;
         int authkickvictim;
@@ -1155,6 +1156,7 @@ namespace server
             ping = 0;
             aireinit = 0;
             needclipboard = 0;
+            uid = 0;
             cleanclipboard();
             groups.setsize(0);
             cleanauth();

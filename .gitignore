@@ -1,3 +1,11 @@
+# project specific files
+src/sauer_server
+bin_unix/native_server
+
+# C build related files
+*.o
+*.lo
+
 *.py[cod]
 
 # C extensions

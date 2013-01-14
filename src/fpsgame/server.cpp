@@ -2125,6 +2125,14 @@ namespace server
         loopv(clients) if(clients[i]->authkickvictim == ci->clientnum) clients[i]->cleanauth(); 
         if(ci->connected)
         {
+            if(ci->localauthname[0])
+            {
+                if(!requestlocalmasterf("disconnected %u\n", ci->uid))
+                {
+                    logoutf("Failed to record disconnect. No connection to local master server.");
+                }
+            }
+            
             if(ci->privilege) setmaster(ci, false);
             if(smode) smode->leavegame(ci, true);
             ci->state.timeplayed += lastmillis - ci->state.lasttimeplayed;
@@ -2210,6 +2218,7 @@ namespace server
 
     clientinfo *findauth(uint id)
     {
+        loopv(connects) if(connects[i]->authreq == id) return connects[i];
         loopv(clients) if(clients[i]->authreq == id) return clients[i];
         return NULL;
     }
@@ -2245,21 +2254,22 @@ namespace server
         else setmaster(ci, true, "", ci->authname, NULL, PRIV_AUTH);
     }
     
-    void localauthsucceeded(uint id, string name_str, const char *groups_str)
+    void localauthsucceeded(uint id, uint uid, string name_str, const char *groups_str)
     {
         clientinfo *ci = findauth(id);
         if(!ci) return;
         ci->cleanauth(ci->connectauth!=0);
         if(ci->connectauth) connected(ci);
         
+        ci->uid = uid;
         filtertext(ci->localauthname, name_str, false, 100);
         filtertext(ci->authname, name_str, false, 100);
         explodelist(groups_str, ci->groups);
         
         if(ci->authkickvictim >= 0)
         {
-            if(setmaster(ci, true, "", ci->authname, NULL, PRIV_AUTH, false, true))
-                trykick(ci, ci->authkickvictim, ci->authkickreason, ci->authname, NULL, PRIV_AUTH);    
+            if(setmaster(ci, true, "", ci->localauthname, NULL, PRIV_AUTH, false, true))
+                trykick(ci, ci->authkickvictim, ci->authkickreason, ci->localauthname, NULL, PRIV_AUTH);    
             ci->cleanauthkick();
         }
         else
@@ -2307,7 +2317,7 @@ namespace server
 
     void answerchallenge(clientinfo *ci, uint id, char *val, const char *desc)
     {
-        if(ci->authreq != id || strcmp(ci->authdesc, desc)) 
+        if(ci->authreq != id || strcmp(ci->authdesc, desc))
         {
             ci->cleanauth();
             if(ci->connectauth) disconnect_client(ci->clientnum, ci->connectauth);
@@ -2358,8 +2368,6 @@ namespace server
     
     void namesresult(uint id, const char *names_str)
     {
-        fprintf(stderr, "names_str: %s\n", names_str);
-        
         clientinfo *ci = findlocalmaster_requester(id);
         if(!ci) return;
         
@@ -2395,17 +2403,15 @@ namespace server
     
     void processlocalmasterinput(const char *cmd, int cmdlen, const char *args)
     {
-        fprintf(stderr, "local master cmd: %s\n", cmd);
-        
-        uint id;
+        uint id, uid;
         string val;
         string authname;
         int pos;
         
         if(sscanf(cmd, "failauth %u", &id) == 1)
             authfailed(id);
-        else if(sscanf(cmd, "succauth %u %100s %n", &id, authname, &pos) == 2)
-            localauthsucceeded(id, authname, &cmd[pos]);
+        else if(sscanf(cmd, "succauth %u %u %100s %n", &id, &uid, authname, &pos) == 3)
+            localauthsucceeded(id, uid, authname, &cmd[pos]);
         else if(sscanf(cmd, "chalauth %u %255s", &id, val) == 2)
             authchallenged(id, val, serverauth);
         else if(!strncmp(cmd, "cleargbans", cmdlen))

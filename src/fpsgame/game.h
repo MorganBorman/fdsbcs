@@ -1183,7 +1183,7 @@ namespace server
     
     extern uint nextlocalmasterreq;
     
-    extern int persistentintermission, persistentteams;
+    extern int persistentintermission, persistentteams, pauseondisconnect;
 
     extern const char *modename(int n, const char *unknown = "unknown");
     extern const char *mastermodename(int n, const char *unknown = "unknown");

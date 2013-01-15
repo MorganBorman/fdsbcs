@@ -157,6 +157,33 @@ namespace server
         }
     }
     
+    void cmd_pauseondisconnect(clientinfo *ci, vector<char*> args)
+    {
+        if(args.length() < 2)
+        {
+            sendcnservmsg(ci->clientnum, "\fs\f3Error:\fr Usage: \fs\f2pauseondisconnect <enable/disable>\fr");
+            return;
+        }
+        
+        if(!strcmp(args[1], "enable"))
+        {
+            if(server::pauseondisconnect) return;
+            sendservmsg("\fs\f1Info:\fr Pause on disconnect \fs\f0enabled\fr.");
+            server::pauseondisconnect = true;
+        }
+        else if(!strcmp(args[1], "disable"))
+        {
+            if(!server::pauseondisconnect) return;
+            sendservmsg("\fs\f1Info:\fr Pause on disconnect \fs\f4disabled\fr.");
+            server::pauseondisconnect = false;
+        }
+        else
+        {
+            sendcnservmsg(ci->clientnum, "\fs\f3Error:\fr Usage: \fs\f2pauseondisconnect <enable/disable>\fr");
+            return;
+        }
+    }
+    
     void cmd_instaweapon(clientinfo *ci, vector<char*> args)
     {
         if(args.length() < 2)
@@ -194,6 +221,7 @@ namespace server
         {"names", PRIV_NONE, &cmd_names},
         {"persistentintermission", PRIV_MASTER, &cmd_persistentintermission},
         {"persistentteams", PRIV_MASTER, &cmd_persistentteams},
+        {"pauseondisconnect", PRIV_MASTER, &cmd_pauseondisconnect},
         {"instaweapon", PRIV_MASTER, &cmd_instaweapon},
         {"listcommands", PRIV_NONE, &cmd_listcommands}
     };
@@ -238,7 +266,7 @@ namespace server
     
     void trycommand(clientinfo *ci, const char *cmd) 
     {
-        logoutf("Command: %s: %s", colorname(ci), cmd);
+        logoutf("Command: %s: %s", ci->name, cmd);
     
         vector<char*> args;
         explodelist(cmd, args);

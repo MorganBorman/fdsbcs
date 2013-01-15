@@ -45,6 +45,7 @@ namespace server
     bool gamepaused = false, shouldstep = true;
 
     string smapname = "";
+    int pauseondisconnect = 0;
     int persistentintermission, persistentteams, interm = 0;
     enet_uint32 lastsend = 0;
     int mastermode = MM_OPEN, mastermask = MM_PRIVSERV;
@@ -2138,6 +2139,13 @@ namespace server
             ci->state.timeplayed += lastmillis - ci->state.lasttimeplayed;
             savescore(ci);
             sendf(-1, 1, "ri2", N_CDIS, n);
+            
+            if (pauseondisconnect && ci->state.state!=CS_SPECTATOR && !gamepaused && mastermode>=MM_LOCKED)
+            {
+                forcepaused(true);
+                sendservmsgf("%s has disconnected. Pausing game. (pauseondisconnect is \fs\f0enabled\fr)", colorname(ci));
+            }
+            
             clients.removeobj(ci);
             aiman::removeai(ci);
             if(!numclients(-1, false, true)) noclients(); // bans clear when server empties
@@ -3010,6 +3018,12 @@ namespace server
 
                 if(spinfo->state.state!=CS_SPECTATOR && val)
                 {
+                    if (pauseondisconnect && !gamepaused && mastermode>=MM_LOCKED)
+                    {
+                        forcepaused(true);
+                        sendservmsgf("%s has been spectated. Pausing game. (pauseondisconnect is \fs\f0enabled\fr)", colorname(ci));
+                    }
+                    
                     if(spinfo->state.state==CS_ALIVE) suicide(spinfo);
                     if(smode) smode->leavegame(spinfo);
                     spinfo->state.state = CS_SPECTATOR;

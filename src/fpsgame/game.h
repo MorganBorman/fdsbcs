@@ -960,7 +960,7 @@ namespace server
             effectiveness = 0;
             frags = flags = deaths = teamkills = shotdamage = damage = tokens = 0;
 
-            lastdeath = 0;
+            lastdeath = lifesequence = 0;
 
             respawn();
         }
@@ -1158,7 +1158,7 @@ namespace server
             needclipboard = 0;
             uid = 0;
             cleanclipboard();
-            groups.setsize(0);
+            groups.deletearrays();
             cleanauth();
             mapchange();
         }

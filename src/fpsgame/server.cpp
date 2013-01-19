@@ -1901,6 +1901,10 @@ namespace server
 
     bool timedevent::flush(clientinfo *ci, int fmillis)
     {
+        int cn = ci->clientnum;
+        ci = getinfo(cn);
+        if(!ci) return true;
+    
         if(millis > fmillis) return false;
         else if(millis >= ci->lastevent)
         {
@@ -2404,9 +2408,11 @@ namespace server
             name_entry *ne = name_entries[i];
             formatstring(entry_str)(" %s(%d, %.2f%%, %s)", ne->name, ne->count, float(ne->count)*100.0/float(total_occurances), ne->date);
             names_output.put(entry_str, strlen(entry_str));
+            delete ne;
         }
         
         sendcnservmsgf(ci->clientnum, "\fs\f1Info:\fr Names:%s", names_output.getbuf());
+        names.deletearrays();
     }
     
     void processlocalmasterinput(const char *cmd, int cmdlen, const char *args)

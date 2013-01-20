@@ -610,6 +610,34 @@ namespace server
         }
         return best;
     }
+    
+    void sendchangeteam(clientinfo *ci)
+    {
+        if(ci->uid)
+        {
+            string srvdesc;
+            filtertext(srvdesc, serverdesc, false);
+            if(!requestlocalmasterf("changeteam %u %s %s\n", ci->uid, srvdesc, ci->state.state==CS_SPECTATOR ? "spectators" : m_teammode ? ci->team : "FreeForAll"))
+            {
+                logoutf("Failed to send changeteam message. No connection to local master server.");
+            }
+        }
+    }
+    
+    void setteam(packetbuf &p, clientinfo *ci, const char *teamname, int reason)
+    {
+        putint(p, N_SETTEAM);
+        putint(p, ci->clientnum);
+        sendstring(ci->team, p);
+        putint(p, -1);
+        sendchangeteam(ci);
+    }
+    
+    void setteam(clientinfo *ci, const char *teamname, int reason, bool sendchange=true)
+    {
+        sendf(-1, 1, "riisi", N_SETTEAM, ci->clientnum, teamname, reason);
+        if(sendchange) sendchangeteam(ci);
+    }
 
     void autoteam()
     {
@@ -643,7 +671,7 @@ namespace server
                 clientinfo *ci = team[i][j];
                 if(!strcmp(ci->team, teamnames[i])) continue;
                 copystring(ci->team, teamnames[i], MAXTEAMLEN+1);
-                sendf(-1, 1, "riisi", N_SETTEAM, ci->clientnum, teamnames[i], -1);
+                setteam(ci, teamnames[i], -1, false);
             }
         }
     }
@@ -1485,10 +1513,7 @@ namespace server
         } 
         if(ci)
         {
-            putint(p, N_SETTEAM);
-            putint(p, ci->clientnum);
-            sendstring(ci->team, p);
-            putint(p, -1);
+            setteam(p, ci, ci->team, -1);
         }
         if(ci && (m_demo || m_mp(gamemode)) && ci->state.state!=CS_SPECTATOR)
         {
@@ -1515,6 +1540,7 @@ namespace server
             putint(p, ci->clientnum);
             putint(p, 1);
             sendf(-1, 1, "ri3x", N_SPECTATOR, ci->clientnum, 1, ci->clientnum);
+            sendchangeteam(ci);
         }
         if(!ci || clients.length()>1)
         {
@@ -1627,6 +1653,8 @@ namespace server
             ci->mapchange();
             ci->state.lasttimeplayed = lastmillis;
             if(m_mp(gamemode) && ci->state.state!=CS_SPECTATOR) sendspawn(ci);
+            
+            sendchangeteam(ci);
         }
 
         aiman::changemap();
@@ -2151,7 +2179,7 @@ namespace server
         loopv(clients) if(clients[i]->authkickvictim == ci->clientnum) clients[i]->cleanauth(); 
         if(ci->connected)
         {
-            if(ci->localauthname[0])
+            if(ci->uid)
             {
                 if(!requestlocalmasterf("disconnected %u\n", ci->uid))
                 {
@@ -2298,6 +2326,8 @@ namespace server
         filtertext(ci->localauthname, name_str, false, 100);
         filtertext(ci->authname, name_str, false, 100);
         explodelist(groups_str, ci->groups);
+        
+        sendchangeteam(ci);
         
         if(ci->authkickvictim >= 0)
         {
@@ -2484,7 +2514,7 @@ namespace server
             }
         }
     }
-
+    
     void connected(clientinfo *ci)
     {
         if(m_demo) enddemoplayback();
@@ -2905,8 +2935,11 @@ namespace server
                 {
                     if(ci->state.state==CS_ALIVE) suicide(ci);
                     copystring(ci->team, text);
+                    
+
+                    
                     aiman::changeteam(ci);
-                    sendf(-1, 1, "riisi", N_SETTEAM, sender, ci->team, ci->state.state==CS_SPECTATOR ? -1 : 0);
+                    setteam(ci, ci->team, ci->state.state==CS_SPECTATOR ? -1 : 0);
                 }
                 break;
             }
@@ -3066,6 +3099,7 @@ namespace server
                     if(spinfo->clientmap[0] || spinfo->mapcrc) checkmaps();
                 }
                 sendf(-1, 1, "ri3", N_SPECTATOR, spectator, val);
+                sendchangeteam(spinfo);
                 if(!val && !hasmap(spinfo)) rotatemap(true);
                 break;
             }
@@ -3084,7 +3118,7 @@ namespace server
                     copystring(wi->team, text, MAXTEAMLEN+1);
                 }
                 aiman::changeteam(wi);
-                sendf(-1, 1, "riisi", N_SETTEAM, who, wi->team, 1);
+                setteam(wi, wi->team, 1);
                 break;
             }
 

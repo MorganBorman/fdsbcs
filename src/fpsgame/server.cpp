@@ -671,7 +671,7 @@ namespace server
                 clientinfo *ci = team[i][j];
                 if(!strcmp(ci->team, teamnames[i])) continue;
                 copystring(ci->team, teamnames[i], MAXTEAMLEN+1);
-                setteam(ci, teamnames[i], -1, false);
+                setteam(ci, teamnames[i], -1);
             }
         }
     }

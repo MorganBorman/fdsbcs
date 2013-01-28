@@ -1,4 +1,5 @@
 #include "game.h"
+#include "punitiveeffects.h"
 
 namespace server
 {
@@ -103,6 +104,145 @@ namespace server
         }
     }
     
+    void parse_ip_mask_string(const char* input, uint* ip, uint* mask, clientinfo** tci)
+    {
+    	int tcn;
+    	uint temp_ip;
+    	uchar* ipc = (uchar*)&temp_ip;
+    	if(sscanf(input, "%hhu.%hhu.%hhu.%hhu", &ipc[0], &ipc[1], &ipc[2], &ipc[3]) == 4)
+    	{
+    		*ip = temp_ip;
+    	}
+    	else if(sscanf(input, "%d", &tcn) == 1)
+    	{
+    		*tci = getinfo(tcn);
+    		*ip = getclientip((*tci)->clientnum);
+    	}
+
+    	char *maskpos = strchr((char*)input, ':');
+    	if(maskpos)
+    	{
+    		if(sscanf(&maskpos[1], "%hhu.%hhu.%hhu.%hhu", &ipc[0], &ipc[1], &ipc[2], &ipc[3]) == 4)
+    		{
+    			*mask = temp_ip;
+    		}
+    	}
+    }
+
+    void add_effect(clientinfo *ci, vector<char*> args, const char* effect_type)
+    {
+		clientinfo* tci = NULL;
+		vector<char> reasonchrs;
+
+		uint target_id = 0;
+		char* target_name = (char*)"";
+		uint target_ip;
+		uint target_mask = 0xFFFFFF00;
+
+		uint master_id = ci->uid;
+		char* master_name = (char*)ci->name;
+		uint master_ip = getclientip(ci->clientnum);
+
+		uint expiry_time = 3600;
+		char* reason = NULL;
+
+		parse_ip_mask_string(args[1], &target_ip, &target_mask, &tci);
+
+		if(tci)
+		{
+			target_id = tci->uid;
+			target_name = tci->name;
+		}
+
+		if(args.length() >= 3)
+		{
+			expiry_time = atoi(args[2]);
+		}
+
+		if(args.length() >= 4)
+		{
+			loopv(args) if(i >= 3)
+			{
+				if(i > 3) reasonchrs.put(" ", 1);
+				reasonchrs.put(args[i], strlen(args[i]));
+			}
+			reason = reasonchrs.getbuf();
+		}
+
+        if(!requestlocalmasterf("addeffect %s %u %s %u %u %u %s %u %u %s\n", effect_type, target_id, target_name, target_ip, target_mask, master_id, master_name, master_ip, expiry_time, reason ? reason : "unspecfied"))
+        {
+            sendf(ci->clientnum, 1, "ris", N_SERVMSG, "not connected to local master server.");
+        }
+    }
+
+    void cmd_mute(clientinfo *ci, vector<char*> args)
+    {
+        if(hasadmingroup(ci) || hasmastergroup(ci))
+        {
+			if(args.length() < 2)
+			{
+				sendcnservmsg(ci->clientnum, "\fs\f3Error:\fr Usage: \fs\f2mute <cn|ip>(:mask) (time) (reason)\fr");
+				return;
+			}
+			add_effect(ci, args, "mute");
+        }
+        else
+        {
+            insufficientpermissions(ci);
+        }
+    }
+
+    void cmd_spec(clientinfo *ci, vector<char*> args)
+    {
+        if(hasadmingroup(ci) || hasmastergroup(ci))
+        {
+			if(args.length() < 2)
+			{
+				sendcnservmsg(ci->clientnum, "\fs\f3Error:\fr Usage: \fs\f2spec <cn|ip>(:mask) (time) (reason)\fr");
+				return;
+			}
+			add_effect(ci, args, "spectate");
+		}
+		else
+		{
+			insufficientpermissions(ci);
+		}
+    }
+
+    void cmd_ban(clientinfo *ci, vector<char*> args)
+    {
+        if(hasadmingroup(ci) || hasmastergroup(ci))
+        {
+			if(args.length() < 2)
+			{
+				sendcnservmsg(ci->clientnum, "\fs\f3Error:\fr Usage: \fs\f2ban <cn|ip>(:mask) (time) (reason)\fr");
+				return;
+			}
+			add_effect(ci, args, "ban");
+		}
+		else
+		{
+			insufficientpermissions(ci);
+		}
+    }
+
+    void cmd_limit(clientinfo *ci, vector<char*> args)
+    {
+        if(hasadmingroup(ci) || hasmastergroup(ci))
+        {
+			if(args.length() < 2)
+			{
+				sendcnservmsg(ci->clientnum, "\fs\f3Error:\fr Usage: \fs\f2limit <cn|ip>(:mask) (time) (reason)\fr");
+				return;
+			}
+			add_effect(ci, args, "limit");
+		}
+		else
+		{
+			insufficientpermissions(ci);
+		}
+    }
+
     void cmd_persistentintermission(clientinfo *ci, vector<char*> args)
     {
         if(args.length() < 2)
@@ -156,7 +296,7 @@ namespace server
             return;
         }
     }
-    
+
     void cmd_pauseondisconnect(clientinfo *ci, vector<char*> args)
     {
         if(args.length() < 2)
@@ -219,6 +359,10 @@ namespace server
         {"master", PRIV_NONE, &cmd_master},
         {"admin", PRIV_NONE, &cmd_admin},
         {"names", PRIV_NONE, &cmd_names},
+        {"mute", PRIV_NONE, &cmd_mute},
+        {"ban", PRIV_NONE, &cmd_ban},
+        {"spec", PRIV_NONE, &cmd_spec},
+        {"limit", PRIV_NONE, &cmd_limit},
         {"persistentintermission", PRIV_MASTER, &cmd_persistentintermission},
         {"persistentteams", PRIV_MASTER, &cmd_persistentteams},
         {"pauseondisconnect", PRIV_MASTER, &cmd_pauseondisconnect},

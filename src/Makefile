@@ -1,4 +1,4 @@
-CXXFLAGS= -g -fomit-frame-pointer
+CXXFLAGS= -g -ggdb3 -fomit-frame-pointer
 override CXXFLAGS+= -Wall -fsigned-char -fno-exceptions -fno-rtti
 
 PLATFORM= $(shell uname -s)
@@ -62,6 +62,7 @@ SERVER_OBJS= \
 	fpsgame/entities-standalone.o \
 	fpsgame/server-standalone.o \
 	fpsgame/commands-standalone.o \
+	fpsgame/punitiveeffects-standalone.o \
 
 MASTER_OBJS= \
 	shared/crypto-standalone.o \
@@ -414,8 +415,9 @@ fpsgame/server-standalone.o: shared/geom.h shared/ents.h shared/command.h
 fpsgame/server-standalone.o: shared/iengine.h shared/igame.h fpsgame/ai.h
 fpsgame/server-standalone.o: fpsgame/capture.h fpsgame/ctf.h
 fpsgame/server-standalone.o: fpsgame/collect.h fpsgame/extinfo.h
-fpsgame/server-standalone.o: fpsgame/aiman.h
+fpsgame/server-standalone.o: fpsgame/aiman.h fpsgame/punitiveeffects.h
 fpsgame/commands-standalone.o: fpsgame/commands.cpp fpsgame/game.h
+fpsgame/punitiveeffects-standalone.o: fpsgame/punitiveeffects.cpp fpsgame/game.h
 
 engine/master-standalone.o: shared/cube.h shared/tools.h shared/geom.h
 engine/master-standalone.o: shared/ents.h shared/command.h shared/iengine.h

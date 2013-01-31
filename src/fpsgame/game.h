@@ -1159,6 +1159,7 @@ namespace server
             uid = 0;
             cleanclipboard();
             groups.deletearrays();
+            groups.setsize(0);
             cleanauth();
             mapchange();
         }

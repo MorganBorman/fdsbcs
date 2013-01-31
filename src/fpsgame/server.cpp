@@ -274,13 +274,13 @@ namespace server
     SVAR(serverpass, "");
     SVAR(adminpass, "");
     VARF(publicserver, 0, 0, 2, {
-		switch(publicserver)
-		{
-			case 0: default: mastermask = MM_PRIVSERV; break;
-			case 1: mastermask = MM_PUBSERV; break;
-			case 2: mastermask = MM_COOPSERV; break;
-		}
-	});
+        switch(publicserver)
+        {
+            case 0: default: mastermask = MM_PRIVSERV; break;
+            case 1: mastermask = MM_PUBSERV; break;
+            case 2: mastermask = MM_COOPSERV; break;
+        }
+    });
     SVAR(servermotd, "");
 
     struct teamkillkick
@@ -2480,35 +2480,35 @@ namespace server
 
     void effectupdated(punitiveeffects::punitiveeffect* effect)
     {
-    	loopv(clients)
-		{
-    		clientinfo *ci = clients[i];
-    		uint ip = getclientip(ci->clientnum);
-    		if(((effect->ip & effect->mask) == (ip & effect->mask)))
-    		{
-    			const char* effect_type = punitiveeffects::type_name(effect->type, true);
-    			sendcnservmsgf(ci->clientnum, "\fs\f1Info:\fr You are now \fs\f3%s\fr for \"\fs\f4%s\fr\".", effect_type, effect->reason);
-    			if(!(ci->privilege || ci->local || hasmastergroup(ci) || hasadmingroup(ci)))
-    			{
-    				if(effect->type==punitiveeffects::BAN) disconnect_client(ci->clientnum, DISC_IPBAN);
-    				if(effect->type==punitiveeffects::SPECTATE && ci->state.state!=CS_SPECTATOR) spectate(ci);
-    			}
-    		}
-		}
+        loopv(clients)
+        {
+            clientinfo *ci = clients[i];
+            uint ip = getclientip(ci->clientnum);
+            if(((effect->ip & effect->mask) == (ip & effect->mask)))
+            {
+                const char* effect_type = punitiveeffects::type_name(effect->type, true);
+                sendcnservmsgf(ci->clientnum, "\fs\f1Info:\fr You are now \fs\f3%s\fr for \"\fs\f4%s\fr\".", effect_type, effect->reason);
+                if(!(ci->privilege || ci->local || hasmastergroup(ci) || hasadmingroup(ci)))
+                {
+                    if(effect->type==punitiveeffects::BAN) disconnect_client(ci->clientnum, DISC_IPBAN);
+                    if(effect->type==punitiveeffects::SPECTATE && ci->state.state!=CS_SPECTATOR) spectate(ci);
+                }
+            }
+        }
     }
 
     void effectremoved(punitiveeffects::punitiveeffect* effect)
     {
-    	loopv(clients)
-		{
-    		clientinfo *ci = clients[i];
-    		uint ip = getclientip(ci->clientnum);
-    		if(((effect->ip & effect->mask) == (ip & effect->mask)))
-    		{
-    			const char* effect_type = punitiveeffects::type_name(effect->type, true);
-    			sendcnservmsgf(ci->clientnum, "\fs\f1Info:\fr You are no longer \fs\f3%s\fr for \"\fs\f4%s\fr\".", effect_type, effect->reason);
-    		}
-		}
+        loopv(clients)
+        {
+            clientinfo *ci = clients[i];
+            uint ip = getclientip(ci->clientnum);
+            if(((effect->ip & effect->mask) == (ip & effect->mask)))
+            {
+                const char* effect_type = punitiveeffects::type_name(effect->type, true);
+                sendcnservmsgf(ci->clientnum, "\fs\f1Info:\fr You are no longer \fs\f3%s\fr for \"\fs\f4%s\fr\".", effect_type, effect->reason);
+            }
+        }
     }
 
     void processlocalmasterinput(const char *cmd, int cmdlen, const char *args)
@@ -2532,18 +2532,18 @@ namespace server
             namesresult(id, &cmd[pos]);
         else if(sscanf(cmd, "effectupdate %u %s %u %u %n", &id, val, &ip, &mask, &pos) == 4)
         {
-        	punitiveeffects::punitiveeffect* effect = punitiveeffects::update(id, ip, mask, punitiveeffects::type_id(val), &cmd[pos]);
-        	effectupdated(effect);
+            punitiveeffects::punitiveeffect* effect = punitiveeffects::update(id, ip, mask, punitiveeffects::type_id(val), &cmd[pos]);
+            effectupdated(effect);
         }
         else if(sscanf(cmd, "effectremove %u", &id) == 1)
         {
-        	punitiveeffects::punitiveeffect* effect = punitiveeffects::remove(id);
-        	if(effect)
-        	{
-        		effectremoved(effect);
-    			free(effect->reason);
-    			free(effect);
-        	}
+            punitiveeffects::punitiveeffect* effect = punitiveeffects::remove(id);
+            if(effect)
+            {
+                effectremoved(effect);
+                free(effect->reason);
+                free(effect);
+            }
         }
     }
 
@@ -2941,20 +2941,20 @@ namespace server
                 }
                 else
                 {
-                	filtertext(text, text);
-                	punitiveeffects::punitiveeffect* effect = punitiveeffects::search(getclientip(ci->clientnum), punitiveeffects::MUTE);
-                	if(effect && !(ci->privilege || ci->local || hasmastergroup(ci) || hasadmingroup(ci)))
-                	{
-                		sendcnservmsgf(ci->clientnum, "\fs\f3Error:\fr You are currently muted. Reason: \"\fs\f4%s\fr\"", effect->reason);
-                		logoutf("%s(muted): %s", colorname(cq), text);
-                	}
-                	else
-                	{
-						QUEUE_AI;
-						QUEUE_INT(N_TEXT);
-						QUEUE_STR(text);
-						logoutf("%s: %s", colorname(cq), text);
-                	}
+                    filtertext(text, text);
+                    punitiveeffects::punitiveeffect* effect = punitiveeffects::search(getclientip(ci->clientnum), punitiveeffects::MUTE);
+                    if(effect && !(ci->privilege || ci->local || hasmastergroup(ci) || hasadmingroup(ci)))
+                    {
+                        sendcnservmsgf(ci->clientnum, "\fs\f3Error:\fr You are currently muted. Reason: \"\fs\f4%s\fr\"", effect->reason);
+                        logoutf("%s(muted): %s", colorname(cq), text);
+                    }
+                    else
+                    {
+                        QUEUE_AI;
+                        QUEUE_INT(N_TEXT);
+                        QUEUE_STR(text);
+                        logoutf("%s: %s", colorname(cq), text);
+                    }
                 }
                 break;
             }
@@ -2963,23 +2963,23 @@ namespace server
             {
                 getstring(text, p);
                 filtertext(text, text);
-            	punitiveeffects::punitiveeffect* effect = punitiveeffects::search(getclientip(ci->clientnum), punitiveeffects::MUTE);
-            	if(effect && !(ci->privilege || ci->local || hasmastergroup(ci) || hasadmingroup(ci)))
-            	{
-            		sendcnservmsgf(ci->clientnum, "\fs\f3Error:\fr You are currently muted. Reason: \"\fs\f4%s\fr\"", effect->reason);
-            		logoutf("%s(muted) <%s>: %s", colorname(cq), cq->team, text);
-            	}
-            	else
-            	{
-					if(!ci || !cq || (ci->state.state==CS_SPECTATOR && !ci->local && !ci->privilege) || !m_teammode || !cq->team[0]) break;
-					loopv(clients)
-					{
-						clientinfo *t = clients[i];
-						if(t==cq || t->state.state==CS_SPECTATOR || t->state.aitype != AI_NONE || strcmp(cq->team, t->team)) continue;
-						sendf(t->clientnum, 1, "riis", N_SAYTEAM, cq->clientnum, text);
-					}
-					logoutf("%s <%s>: %s", colorname(cq), cq->team, text);
-            	}
+                punitiveeffects::punitiveeffect* effect = punitiveeffects::search(getclientip(ci->clientnum), punitiveeffects::MUTE);
+                if(effect && !(ci->privilege || ci->local || hasmastergroup(ci) || hasadmingroup(ci)))
+                {
+                    sendcnservmsgf(ci->clientnum, "\fs\f3Error:\fr You are currently muted. Reason: \"\fs\f4%s\fr\"", effect->reason);
+                    logoutf("%s(muted) <%s>: %s", colorname(cq), cq->team, text);
+                }
+                else
+                {
+                    if(!ci || !cq || (ci->state.state==CS_SPECTATOR && !ci->local && !ci->privilege) || !m_teammode || !cq->team[0]) break;
+                    loopv(clients)
+                    {
+                        clientinfo *t = clients[i];
+                        if(t==cq || t->state.state==CS_SPECTATOR || t->state.aitype != AI_NONE || strcmp(cq->team, t->team)) continue;
+                        sendf(t->clientnum, 1, "riis", N_SAYTEAM, cq->clientnum, text);
+                    }
+                    logoutf("%s <%s>: %s", colorname(cq), cq->team, text);
+                }
                 break;
             }
 
@@ -3013,17 +3013,17 @@ namespace server
                 punitiveeffects::punitiveeffect* effect = punitiveeffects::search(getclientip(ci->clientnum), punitiveeffects::LIMIT);
                 if(effect && !(ci->privilege || ci->local || hasmastergroup(ci) || hasadmingroup(ci)))
                 {
-            		sendcnservmsgf(ci->clientnum, "\fs\f3Error:\fr You are currently limited. Reason: \"\fs\f4%s\fr\"", effect->reason);
+                    sendcnservmsgf(ci->clientnum, "\fs\f3Error:\fr You are currently limited. Reason: \"\fs\f4%s\fr\"", effect->reason);
                 }
                 else
                 {
-					if(m_teammode && text[0] && strcmp(ci->team, text) && (!smode || smode->canchangeteam(ci, ci->team, text)) && addteaminfo(text))
-					{
-						if(ci->state.state==CS_ALIVE) suicide(ci);
-						copystring(ci->team, text);
-						aiman::changeteam(ci);
-						setteam(ci, ci->team, ci->state.state==CS_SPECTATOR ? -1 : 0);
-					}
+                    if(m_teammode && text[0] && strcmp(ci->team, text) && (!smode || smode->canchangeteam(ci, ci->team, text)) && addteaminfo(text))
+                    {
+                        if(ci->state.state==CS_ALIVE) suicide(ci);
+                        copystring(ci->team, text);
+                        aiman::changeteam(ci);
+                        setteam(ci, ci->team, ci->state.state==CS_SPECTATOR ? -1 : 0);
+                    }
                 }
                 break;
             }
@@ -3156,18 +3156,30 @@ namespace server
             case N_SPECTATOR:
             {
                 int spectator = getint(p), val = getint(p);
-                if(!ci->privilege && ci->local && !hasmastergroup(ci) && !hasadmingroup(ci) && (spectator!=sender || (ci->state.state==CS_SPECTATOR && mastermode>=MM_LOCKED))) break;
+                
+                // If they don't have elevated permissions:
+                if(!ci->privilege && ci->local && !hasmastergroup(ci) && !hasadmingroup(ci))
+                {
+                    // If they are a spectator and mastermode is locked they can't unspectate
+                    if(ci->state.state==CS_SPECTATOR && mastermode>=MM_LOCKED) break;
+                    
+                    // They can't spectate/unspectate other players
+                    if(spectator!=sender) break;
+                }
+                
                 clientinfo *spinfo = (clientinfo *)getclientinfo(spectator); // no bots
+                
+                // Don't continue if the target doesn't exist or the state would not change
                 if(!spinfo || (spinfo->state.state==CS_SPECTATOR ? val : !val)) break;
 
                 if(!ci->privilege && !ci->local && (spectator==sender) && !val)
                 {
-					punitiveeffects::punitiveeffect* effect = punitiveeffects::search(getclientip(ci->clientnum), punitiveeffects::SPECTATE);
-					if(effect && !(ci->privilege || ci->local || hasmastergroup(ci) || hasadmingroup(ci)))
-					{
-						sendcnservmsgf(ci->clientnum, "\fs\f3Error:\fr You are currently force spectated. Reason: \"\fs\f4%s\fr\"", effect->reason);
-						break;
-					}
+                    punitiveeffects::punitiveeffect* effect = punitiveeffects::search(getclientip(ci->clientnum), punitiveeffects::SPECTATE);
+                    if(effect && !(ci->privilege || ci->local || hasmastergroup(ci) || hasadmingroup(ci)))
+                    {
+                        sendcnservmsgf(ci->clientnum, "\fs\f3Error:\fr You are currently force spectated. Reason: \"\fs\f4%s\fr\"", effect->reason);
+                        break;
+                    }
                 }
 
                 if(spinfo->state.state!=CS_SPECTATOR && val)

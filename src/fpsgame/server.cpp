@@ -3158,7 +3158,7 @@ namespace server
                 int spectator = getint(p), val = getint(p);
                 
                 // If they don't have elevated permissions:
-                if(!ci->privilege && ci->local && !hasmastergroup(ci) && !hasadmingroup(ci))
+                if(!ci->privilege && !ci->local && !hasmastergroup(ci) && !hasadmingroup(ci))
                 {
                     // If they are a spectator and mastermode is locked they can't unspectate
                     if(ci->state.state==CS_SPECTATOR && mastermode>=MM_LOCKED) break;
@@ -3167,6 +3167,9 @@ namespace server
                     if(spectator!=sender) break;
                 }
                 
+                fprintf(stderr, "spectator = %d, sender = %d, val = %d", spectator, sender, val);
+                fprintf(stderr, " ci->privilege = %d, hasmastergroup(ci) = %s, hasadmingroup(ci) = %s", ci->privilege, hasmastergroup(ci)?"true":"false", hasadmingroup(ci)?"true":"false");
+
                 clientinfo *spinfo = (clientinfo *)getclientinfo(spectator); // no bots
                 
                 // Don't continue if the target doesn't exist or the state would not change

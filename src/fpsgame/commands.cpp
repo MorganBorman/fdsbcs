@@ -104,7 +104,7 @@ namespace server
         }
     }
     
-    void parse_ip_mask_string(const char* input, uint* ip, uint* mask, clientinfo** tci)
+    int parse_ip_mask_string(const char* input, uint* ip, uint* mask, clientinfo** tci)
     {
     	int tcn;
     	uint temp_ip;
@@ -116,7 +116,15 @@ namespace server
     	else if(sscanf(input, "%d", &tcn) == 1)
     	{
     		*tci = getinfo(tcn);
-    		*ip = getclientip((*tci)->clientnum);
+    		if(*tci)
+    		{
+    			*ip = getclientip((*tci)->clientnum);
+    		}
+    		else return -1;
+    	}
+    	else
+    	{
+    		return -1;
     	}
 
     	char *maskpos = strchr((char*)input, ':');
@@ -127,6 +135,8 @@ namespace server
     			*mask = temp_ip;
     		}
     	}
+
+    	return 0;
     }
 
     void add_effect(clientinfo *ci, vector<char*> args, const char* effect_type)
@@ -146,7 +156,11 @@ namespace server
 		uint expiry_time = 3600;
 		char* reason = NULL;
 
-		parse_ip_mask_string(args[1], &target_ip, &target_mask, &tci);
+		if(parse_ip_mask_string(args[1], &target_ip, &target_mask, &tci))
+		{
+			sendcnservmsg(ci->clientnum, "\fs\f3Error:\fr Invalid arguments\fr");
+			return;
+		}
 
 		if(tci)
 		{

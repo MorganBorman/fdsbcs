@@ -127,6 +127,7 @@ namespace server
     		return -1;
     	}
 
+    	temp_ip = 0;
     	char *maskpos = strchr((char*)input, ':');
     	if(maskpos)
     	{
@@ -134,6 +135,62 @@ namespace server
     		{
     			*mask = temp_ip;
     		}
+    	}
+
+    	return 0;
+    }
+
+    struct timevalue {
+
+    	char unit;
+    };
+
+    int parse_time_string(const char* input, uint* expiry_time)
+    {
+    	*expiry_time = 0;
+
+    	vector<char> numbers;
+    	while(*input)
+    	{
+    		if(*input >= '0' && *input <= '9')
+    		{
+    			numbers.add(*input);
+    		}
+    		else if(*input == 's' || *input == 'S')
+    		{
+    			*expiry_time += (atoi(numbers.getbuf()));
+    			numbers.shrink(0);
+    		}
+    		else if(*input == 'm' || *input == 'M')
+    		{
+    			*expiry_time += (atoi(numbers.getbuf())*60);
+    			numbers.shrink(0);
+    		}
+    		else if(*input == 'h' || *input == 'H')
+    		{
+    			*expiry_time += (atoi(numbers.getbuf())*60*60);
+    			numbers.shrink(0);
+    		}
+    		else if(*input == 'd' || *input == 'D')
+    		{
+    			*expiry_time += (atoi(numbers.getbuf())*60*60*24);
+    			numbers.shrink(0);
+    		}
+    		else if(*input == 'y' || *input == 'Y')
+    		{
+    			*expiry_time += (atoi(numbers.getbuf())*60*60*24*365);
+    			numbers.shrink(0);
+    		}
+    		else
+    		{
+    			return -1;
+    		}
+    		input++;
+    	}
+
+    	if(numbers.length())
+    	{
+			*expiry_time += (atoi(numbers.getbuf()));
     	}
 
     	return 0;
@@ -158,7 +215,7 @@ namespace server
 
 		if(parse_ip_mask_string(args[1], &target_ip, &target_mask, &tci))
 		{
-			sendcnservmsg(ci->clientnum, "\fs\f3Error:\fr Invalid arguments\fr");
+			sendcnservmsg(ci->clientnum, "\fs\f3Error:\fr Invalid player specifier arguments\fr");
 			return;
 		}
 
@@ -170,7 +227,11 @@ namespace server
 
 		if(args.length() >= 3)
 		{
-			expiry_time = atoi(args[2]);
+			if(parse_time_string(args[2], &expiry_time))
+			{
+				sendcnservmsg(ci->clientnum, "\fs\f3Error:\fr Invalid time arguments\fr");
+				return;
+			}
 		}
 
 		if(args.length() >= 4)

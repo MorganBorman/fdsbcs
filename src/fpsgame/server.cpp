@@ -3166,9 +3166,6 @@ namespace server
                     // They can't spectate/unspectate other players
                     if(spectator!=sender) break;
                 }
-                
-                fprintf(stderr, "spectator = %d, sender = %d, val = %d", spectator, sender, val);
-                fprintf(stderr, " ci->privilege = %d, hasmastergroup(ci) = %s, hasadmingroup(ci) = %s", ci->privilege, hasmastergroup(ci)?"true":"false", hasadmingroup(ci)?"true":"false");
 
                 clientinfo *spinfo = (clientinfo *)getclientinfo(spectator); // no bots
                 

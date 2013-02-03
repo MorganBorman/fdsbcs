@@ -140,15 +140,9 @@ namespace server
     	return 0;
     }
 
-    struct timevalue {
-
-    	char unit;
-    };
-
     int parse_time_string(const char* input, uint* expiry_time)
     {
     	*expiry_time = 0;
-
     	vector<char> numbers;
     	while(*input)
     	{
@@ -318,6 +312,21 @@ namespace server
 		}
     }
 
+    void cmd_pause(clientinfo *ci, vector<char*> args)
+    {
+    	if(resumetime || gamepaused) return;
+    	sendservmsgf("\fs\f1Info:\fr Game \fs\f3paused\fr by \fs\f0%s\fr.", colorname(ci));
+    	forcepaused(true);
+    }
+
+    void cmd_resume(clientinfo *ci, vector<char*> args)
+    {
+    	if(resumetime || !gamepaused) return;
+    	sendservmsgf("\fs\f1Info:\fr \fs\f0%s\fr resumed the game.", colorname(ci));
+    	resumetime = totalmillis + resumedelay*1000;
+    	resumecounter = resumedelay;
+    }
+
     void cmd_persistentintermission(clientinfo *ci, vector<char*> args)
     {
         if(args.length() < 2)
@@ -483,6 +492,8 @@ namespace server
         {"ban", PRIV_NONE, &cmd_ban},
         {"spec", PRIV_NONE, &cmd_spec},
         {"limit", PRIV_NONE, &cmd_limit},
+        {"pause", PRIV_MASTER, &cmd_pause},
+        {"resume", PRIV_MASTER, &cmd_resume},
         {"persistentintermission", PRIV_MASTER, &cmd_persistentintermission},
         {"persistentteams", PRIV_MASTER, &cmd_persistentteams},
         {"pauseondisconnect", PRIV_MASTER, &cmd_pauseondisconnect},

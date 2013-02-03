@@ -365,7 +365,10 @@ static const struct guninfo { int sound, attackdelay, damage, spread, projspeed,
 namespace server
 {
 	extern int resumedelay;
+	extern int resumetime;
+	extern int resumecounter;
     extern int instaweapon;
+    extern bool gamepaused;
 }
 
 // inherited by fpsent and server clients

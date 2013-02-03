@@ -1621,7 +1621,7 @@ namespace server
         changegamespeed(100);
         if(smode) smode->cleanup();
         aiman::clearai();
-
+        resumetime = resumecounter = 0;
         gamemode = mode;
         gamemillis = 0;
         gamelimit = (m_overtime ? 15 : 10)*60000;
@@ -3146,6 +3146,7 @@ namespace server
                         }
                         sendf(-1, 1, "rii", N_MASTERMODE, mastermode);
                         //sendservmsgf("mastermode is now %s (%d)", mastermodename(mastermode), mastermode);
+                        sendservmsgf("\fs\f0%s\fr set mastermode to %s (%d)", colorname(ci), mastermodename(mastermode), mastermode);
                     }
                     else
                     {
@@ -3223,7 +3224,7 @@ namespace server
                     if(spinfo->clientmap[0] || spinfo->mapcrc) checkmaps();
                 }
                 sendf(-1, 1, "ri3", N_SPECTATOR, spectator, val);
-                if(spectator!=sender) sendservmsgf("\fs\f0%s\fr has been spectated by \fs\f0%s\fr.", colorname(spinfo), colorname(ci));
+                if(spectator!=sender) sendservmsgf("\fs\f0%s\fr has been %s by \fs\f0%s\fr.", colorname(spinfo), val ? "spectated" : "unspectated", colorname(ci));
                 sendchangeteam(spinfo);
                 if(!val && !hasmap(spinfo)) rotatemap(true);
                 break;
@@ -3421,6 +3422,7 @@ namespace server
             {
                 int val = getint(p);
                 if(ci->privilege < (restrictpausegame ? PRIV_ADMIN : PRIV_MASTER) && !ci->local) break;
+                if(resumetime) break;
                 if(val <= 0 && resumedelay && gamepaused)
         		{
                 	sendservmsgf("\fs\f1Info:\fr \fs\f0%s\fr resumed the game.", colorname(ci));

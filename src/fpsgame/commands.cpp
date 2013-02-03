@@ -329,13 +329,13 @@ namespace server
         if(!strcmp(args[1], "enable"))
         {
             if(server::persistentintermission) return;
-            sendservmsg("\fs\f1Info:\fr Peristent intermission \fs\f0enabled\fr.");
+            sendservmsgf("\fs\f1Info:\fr Peristent intermission \fs\f0enabled\fr by \fs\f0%s\fr.", colorname(ci));
             server::persistentintermission = true;
         }
         else if(!strcmp(args[1], "disable"))
         {
             if(!server::persistentintermission) return;
-            sendservmsg("\fs\f1Info:\fr Peristent intermission \fs\f4disabled\fr.");
+            sendservmsgf("\fs\f1Info:\fr Peristent intermission \fs\f4disabled\fr by \fs\f0%s\fr.", colorname(ci));
             server::persistentintermission = false;
         }
         else
@@ -356,13 +356,13 @@ namespace server
         if(!strcmp(args[1], "enable"))
         {
             if(server::persistentteams) return;
-            sendservmsg("\fs\f1Info:\fr Peristent teams \fs\f0enabled\fr.");
+            sendservmsgf("\fs\f1Info:\fr Peristent teams \fs\f0enabled\fr by \fs\f0%s\fr.", colorname(ci));
             server::persistentteams = true;
         }
         else if(!strcmp(args[1], "disable"))
         {
             if(!server::persistentteams) return;
-            sendservmsg("\fs\f1Info:\fr Peristent teams \fs\f4disabled\fr.");
+            sendservmsgf("\fs\f1Info:\fr Peristent teams \fs\f4disabled\fr by \fs\f0%s\fr.", colorname(ci));
             server::persistentteams = false;
         }
         else
@@ -383,13 +383,13 @@ namespace server
         if(!strcmp(args[1], "enable"))
         {
             if(server::pauseondisconnect) return;
-            sendservmsg("\fs\f1Info:\fr Pause on disconnect \fs\f0enabled\fr.");
+            sendservmsgf("\fs\f1Info:\fr Pause on disconnect \fs\f0enabled\fr by \fs\f0%s\fr.", colorname(ci));
             server::pauseondisconnect = true;
         }
         else if(!strcmp(args[1], "disable"))
         {
             if(!server::pauseondisconnect) return;
-            sendservmsg("\fs\f1Info:\fr Pause on disconnect \fs\f4disabled\fr.");
+            sendservmsgf("\fs\f1Info:\fr Pause on disconnect \fs\f4disabled\fr by \fs\f0%s\fr.", colorname(ci));
             server::pauseondisconnect = false;
         }
         else
@@ -417,9 +417,54 @@ namespace server
         
         server::instaweapon = w;
         
-        sendservmsgf("\fs\f1Info:\fr Insta weapon now set to: \fs\f4%s\fr.", guns[w].name);
+        sendservmsgf("\fs\f1Info:\fr Insta weapon now set to: \fs\f4%s\fr by \fs\f0%s\fr.", guns[w].name, colorname(ci));
     }
     
+    void cmd_resumedelay(clientinfo *ci, vector<char*> args)
+    {
+        if(args.length() < 2)
+        {
+            sendcnservmsg(ci->clientnum, "\fs\f3Error:\fr Usage: \fs\f2resumedelay <seconds>\fr");
+            return;
+        }
+
+        int w = atoi(args[1]);
+
+        if (w < 0 || w >= 15)
+        {
+        	sendcnservmsg(ci->clientnum, "\fs\f3Error:\fr you must specify a number of seconds between 0 and 15.");
+            return;
+        }
+
+        server::resumedelay = w;
+
+        sendservmsgf("\fs\f1Info:\fr resumedelay set to: \fs\f4%d\fr by \fs\f0%s\fr.", server::resumedelay, colorname(ci));
+    }
+
+    void cmd_timeleft(clientinfo *ci, vector<char*> args)
+    {
+        if(args.length() < 2)
+        {
+            sendcnservmsg(ci->clientnum, "\fs\f3Error:\fr Usage: \fs\f2resumedelay <seconds>\fr");
+            return;
+        }
+
+        uint w = 0;
+
+		if(parse_time_string(args[1], &w))
+		{
+			sendcnservmsg(ci->clientnum, "\fs\f3Error:\fr Invalid time arguments\fr");
+			return;
+		}
+
+		fprintf(stderr, "Got a number of seconds %u\n", w);
+
+        gamelimit = gamemillis + w*1000;
+        sendf(-1, 1, "ri2", N_TIMEUP, gamemillis < gamelimit && !interm ? max((gamelimit - gamemillis)/1000, 1) : 0);
+
+        sendservmsgf("\fs\f1Info:\fr timeleft set to: \fs\f4%d\fr seconds by \fs\f0%s\fr.", gamemillis < gamelimit && !interm ? max((gamelimit - gamemillis)/1000, 1) : 0, colorname(ci));
+    }
+
     struct command
     {
         const char *name;
@@ -442,6 +487,8 @@ namespace server
         {"persistentteams", PRIV_MASTER, &cmd_persistentteams},
         {"pauseondisconnect", PRIV_MASTER, &cmd_pauseondisconnect},
         {"instaweapon", PRIV_MASTER, &cmd_instaweapon},
+        {"resumedelay", PRIV_MASTER, &cmd_resumedelay},
+        {"timeleft", PRIV_MASTER, &cmd_timeleft},
         {"listcommands", PRIV_NONE, &cmd_listcommands}
     };
     

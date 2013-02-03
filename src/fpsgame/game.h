@@ -364,6 +364,7 @@ static const struct guninfo { int sound, attackdelay, damage, spread, projspeed,
 
 namespace server
 {
+	extern int resumedelay;
     extern int instaweapon;
 }
 
@@ -1019,7 +1020,7 @@ namespace server
         }
     };
 
-    extern int gamemillis, nextexceeded;
+    extern int gamemillis, gamelimit, interm, nextexceeded;
 
     struct clientinfo
     {

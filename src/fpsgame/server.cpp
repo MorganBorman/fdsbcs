@@ -52,6 +52,9 @@ namespace server
     int mastermode = MM_OPEN, mastermask = MM_PRIVSERV;
     stream *mapdata = NULL;
     int instaweapon = GUN_RIFLE;
+    int resumedelay = 0;
+    int resumetime = 0;
+    int resumecounter = 0;
 
     vector<uint> allowedips;
     vector<ban> bannedips;
@@ -1671,6 +1674,13 @@ namespace server
         }
 
         if(smode) smode->setup();
+
+        if(resumedelay)
+		{
+        	forcepaused(true);
+        	resumetime = totalmillis + resumedelay*1000;
+        	resumecounter = resumedelay;
+		}
     }
 
     void rotatemap(bool next)
@@ -2010,6 +2020,18 @@ namespace server
 
     void serverupdate()
     {
+		if(resumetime && ((resumetime - totalmillis)/1000) < resumecounter)
+		{
+			sendservmsgf("\fs\f1Info:\fr resuming in \fs\f0%d\fr.", resumecounter);
+			resumecounter--;
+		}
+
+    	if (resumetime && resumetime < totalmillis)
+    	{
+    		forcepaused(false);
+    		resumetime = 0;
+    	}
+
         if(shouldstep && !gamepaused)
         {
             gamemillis += curtime;
@@ -3201,6 +3223,7 @@ namespace server
                     if(spinfo->clientmap[0] || spinfo->mapcrc) checkmaps();
                 }
                 sendf(-1, 1, "ri3", N_SPECTATOR, spectator, val);
+                if(spectator!=sender) sendservmsgf("\fs\f0%s\fr has been spectated by \fs\f0%s\fr.", colorname(spinfo), colorname(ci));
                 sendchangeteam(spinfo);
                 if(!val && !hasmap(spinfo)) rotatemap(true);
                 break;
@@ -3398,7 +3421,13 @@ namespace server
             {
                 int val = getint(p);
                 if(ci->privilege < (restrictpausegame ? PRIV_ADMIN : PRIV_MASTER) && !ci->local) break;
-                pausegame(val > 0, ci);
+                if(val <= 0 && resumedelay && gamepaused)
+        		{
+                	sendservmsgf("\fs\f1Info:\fr \fs\f0%s\fr resumed the game.", colorname(ci));
+                	resumetime = totalmillis + resumedelay*1000;
+                	resumecounter = resumedelay;
+        		}
+                else pausegame(val > 0, ci);
                 break;
             }
 

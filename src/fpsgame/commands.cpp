@@ -327,6 +327,11 @@ namespace server
     	resumecounter = resumedelay;
     }
 
+    void cmd_remumble(clientinfo *ci, vector<char*> args)
+    {
+    	loopv(clients) sendchangeteam(clients[i]);
+    }
+
     void cmd_persistentintermission(clientinfo *ci, vector<char*> args)
     {
         if(args.length() < 2)
@@ -365,13 +370,13 @@ namespace server
         if(!strcmp(args[1], "enable"))
         {
             if(server::persistentteams) return;
-            sendservmsgf("\fs\f1Info:\fr Peristent teams \fs\f0enabled\fr by \fs\f0%s\fr.", colorname(ci));
+            sendservmsgf("\fs\f1Info:\fr Persistent teams \fs\f0enabled\fr by \fs\f0%s\fr.", colorname(ci));
             server::persistentteams = true;
         }
         else if(!strcmp(args[1], "disable"))
         {
             if(!server::persistentteams) return;
-            sendservmsgf("\fs\f1Info:\fr Peristent teams \fs\f4disabled\fr by \fs\f0%s\fr.", colorname(ci));
+            sendservmsgf("\fs\f1Info:\fr Persistent teams \fs\f4disabled\fr by \fs\f0%s\fr.", colorname(ci));
             server::persistentteams = false;
         }
         else
@@ -494,6 +499,7 @@ namespace server
         {"limit", PRIV_NONE, &cmd_limit},
         {"pause", PRIV_MASTER, &cmd_pause},
         {"resume", PRIV_MASTER, &cmd_resume},
+        {"remumble", PRIV_ADMIN, &cmd_remumble},
         {"persistentintermission", PRIV_MASTER, &cmd_persistentintermission},
         {"persistentteams", PRIV_MASTER, &cmd_persistentteams},
         {"pauseondisconnect", PRIV_MASTER, &cmd_pauseondisconnect},

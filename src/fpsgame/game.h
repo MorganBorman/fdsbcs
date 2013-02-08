@@ -1190,6 +1190,8 @@ namespace server
     
     extern int persistentintermission, persistentteams, pauseondisconnect;
 
+    extern vector<clientinfo *> connects, clients, bots;
+
     extern const char *modename(int n, const char *unknown = "unknown");
     extern const char *mastermodename(int n, const char *unknown = "unknown");
     extern void startintermission();
@@ -1204,6 +1206,8 @@ namespace server
     
     extern clientinfo *getinfo(int n);
     
+    extern void sendchangeteam(clientinfo *ci);
+
     extern bool hasadmingroup(clientinfo *ci);
     extern bool hasmastergroup(clientinfo *ci);
     extern bool setmaster(clientinfo *ci, bool val, const char *pass = "", const char *authname = NULL, const char *authdesc = NULL, int authpriv = PRIV_MASTER, bool force = false, bool trial = false);

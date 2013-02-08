@@ -312,6 +312,18 @@ namespace server
 		}
     }
 
+    void cmd_remumble(clientinfo *ci, vector<char*> args)
+    {
+        if(hasadmingroup(ci) || hasmastergroup(ci))
+        {
+        	loopv(clients) sendchangeteam(clients[i]);
+        }
+        else
+        {
+            insufficientpermissions(ci);
+        }
+    }
+
     void cmd_pause(clientinfo *ci, vector<char*> args)
     {
     	if(resumetime || gamepaused) return;
@@ -325,11 +337,6 @@ namespace server
     	sendservmsgf("\fs\f1Info:\fr \fs\f0%s\fr resumed the game.", colorname(ci));
     	resumetime = totalmillis + resumedelay*1000;
     	resumecounter = resumedelay;
-    }
-
-    void cmd_remumble(clientinfo *ci, vector<char*> args)
-    {
-    	loopv(clients) sendchangeteam(clients[i]);
     }
 
     void cmd_persistentintermission(clientinfo *ci, vector<char*> args)
@@ -497,9 +504,9 @@ namespace server
         {"ban", PRIV_NONE, &cmd_ban},
         {"spec", PRIV_NONE, &cmd_spec},
         {"limit", PRIV_NONE, &cmd_limit},
+        {"remumble", PRIV_NONE, &cmd_remumble},
         {"pause", PRIV_MASTER, &cmd_pause},
         {"resume", PRIV_MASTER, &cmd_resume},
-        {"remumble", PRIV_ADMIN, &cmd_remumble},
         {"persistentintermission", PRIV_MASTER, &cmd_persistentintermission},
         {"persistentteams", PRIV_MASTER, &cmd_persistentteams},
         {"pauseondisconnect", PRIV_MASTER, &cmd_pauseondisconnect},

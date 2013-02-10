@@ -414,13 +414,23 @@ namespace server
     void sendservmsg(const char *s) { sendf(-1, 1, "ris", N_SERVMSG, s); }
     void sendcnservmsgf(int cn, const char *fmt, ...)
     {
-         defvformatstring(s, fmt, fmt);
-         sendf(cn, 1, "ris", N_SERVMSG, s);
+		char s[512];
+		va_list ap;
+		va_start(ap, fmt);
+		vformatstring(s, fmt, ap, 512);
+		va_end(ap);
+
+        sendf(cn, 1, "ris", N_SERVMSG, s);
     }
     void sendservmsgf(const char *fmt, ...)
     {
-         defvformatstring(s, fmt, fmt);
-         sendf(-1, 1, "ris", N_SERVMSG, s);
+		char s[512];
+		va_list ap;
+		va_start(ap, fmt);
+		vformatstring(s, fmt, ap, 512);
+		va_end(ap);
+
+        sendf(-1, 1, "ris", N_SERVMSG, s);
     }
 
     void resetitems()

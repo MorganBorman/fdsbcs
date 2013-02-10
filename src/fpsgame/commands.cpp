@@ -551,6 +551,7 @@ namespace server
                 commandlist.put("\fr", 2);
             }
         }
+        commandlist.put('\0');
         sendcnservmsgf(ci->clientnum, "\fs\f4Available commands:\fr %s", commandlist.getbuf());
     }
     

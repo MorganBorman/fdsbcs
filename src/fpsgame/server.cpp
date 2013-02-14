@@ -1679,7 +1679,7 @@ namespace server
         }
         else if(demonextmatch)
         {
-            demonextmatch = false;
+            //demonextmatch = false;
             setupdemorecord();
         }
 

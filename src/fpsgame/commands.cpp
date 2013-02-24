@@ -198,7 +198,7 @@ namespace server
 		uint target_id = 0;
 		char* target_name = (char*)"";
 		uint target_ip;
-		uint target_mask = 0xFFFFFF00;
+		uint target_mask = 0x00FFFFFF;
 
 		uint master_id = ci->uid;
 		char* master_name = (char*)ci->name;

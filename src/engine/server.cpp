@@ -30,8 +30,8 @@ void setlogfile(const char *fname)
     closelogfile();
     if(fname && fname[0])
     {
-        fname = findfile(fname, "w");
-        if(fname) logfile = fopen(fname, "w");
+        fname = findfile(fname, "a");
+        if(fname) logfile = fopen(fname, "a");
     }
     FILE *f = getlogfile();
     if(f) setvbuf(f, NULL, _IOLBF, BUFSIZ);
@@ -542,7 +542,7 @@ ENetSocket connectmaster()
     if(masteraddress.host == ENET_HOST_ANY)
     {
 #ifdef STANDALONE
-        logoutf("looking up %s...", mastername);
+        logoutf("looking up global master server %s...", mastername);
 #endif
         masteraddress.port = masterport;
         if(!resolverwait(mastername, &masteraddress)) return ENET_SOCKET_NULL;
@@ -556,7 +556,7 @@ ENetSocket connectmaster()
     if(sock == ENET_SOCKET_NULL || connectwithtimeout(sock, mastername, masteraddress) < 0) 
     {
 #ifdef STANDALONE
-        logoutf(sock==ENET_SOCKET_NULL ? "could not open socket" : "could not connect"); 
+        logoutf(sock==ENET_SOCKET_NULL ? "could not open socket for connection to global master server" : "could not connect to global master server");
 #endif
         return ENET_SOCKET_NULL;
     }
@@ -572,7 +572,7 @@ ENetSocket connectlocalmaster()
     if(localmasteraddress.host == ENET_HOST_ANY)
     {
 #ifdef STANDALONE
-        logoutf("looking up %s...", localmastername);
+        logoutf("looking up local master server %s...", localmastername);
 #endif
         localmasteraddress.port = localmasterport;
         if(!resolverwait(localmastername, &localmasteraddress)) return ENET_SOCKET_NULL;
@@ -586,7 +586,7 @@ ENetSocket connectlocalmaster()
     if(sock == ENET_SOCKET_NULL || connectwithtimeout(sock, localmastername, localmasteraddress) < 0) 
     {
 #ifdef STANDALONE
-        logoutf(sock==ENET_SOCKET_NULL ? "could not open socket" : "could not connect"); 
+        logoutf(sock==ENET_SOCKET_NULL ? "could not open socket for connection to local master server" : "could not connect to local master server");
 #endif
         return ENET_SOCKET_NULL;
     }

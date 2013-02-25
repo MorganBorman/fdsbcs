@@ -115,6 +115,22 @@ namespace server
         curmaprotation = 0;
     }
 
+    char msg[1024];
+
+    void logclientf(clientinfo *ci, const char *fmt, ...)
+    {
+        va_list args;
+        va_start(args, fmt);
+        vsnprintf (msg,1024,fmt, args);
+
+        uint ip = getclientip(ci->clientnum);
+        uchar* ipc = (uchar*)&ip;
+
+        logoutf("%hhu.%hhu.%hhu.%hhu (%s,%s) %s: %s", ipc[0], ipc[1], ipc[2], ipc[3], ci->localauthname, ci->authname, colorname(ci), msg);
+
+        va_end(args);
+    }
+
     void nextmaprotation()
     {
         curmaprotation++;
@@ -647,10 +663,10 @@ namespace server
         sendchangeteam(ci);
     }
     
-    void setteam(clientinfo *ci, const char *teamname, int reason, bool sendchange=true)
+    void setteam(clientinfo *ci, const char *teamname, int reason)
     {
         sendf(-1, 1, "riisi", N_SETTEAM, ci->clientnum, teamname, reason);
-        if(sendchange) sendchangeteam(ci);
+        sendchangeteam(ci);
     }
 
     void autoteam()
@@ -2627,6 +2643,8 @@ namespace server
         const char *worst = m_teammode ? chooseworstteam(NULL, ci) : NULL;
         copystring(ci->team, worst ? worst : "good", MAXTEAMLEN+1);
 
+        logclientf(ci, "connected.");
+
         sendwelcome(ci);
         if(restorescore(ci)) sendresume(ci);
         sendinitclient(ci);
@@ -2978,14 +2996,14 @@ namespace server
                     if(effect && !(ci->privilege || ci->local || hasmastergroup(ci) || hasadmingroup(ci)))
                     {
                         sendcnservmsgf(ci->clientnum, "\fs\f3Error:\fr You are currently muted. Reason: \"\fs\f4%s\fr\"", effect->reason);
-                        logoutf("%s(muted): %s", colorname(cq), text);
+                        logclientf(ci, "chat(muted): %s", text);
                     }
                     else
                     {
                         QUEUE_AI;
                         QUEUE_INT(N_TEXT);
                         QUEUE_STR(text);
-                        logoutf("%s: %s", colorname(cq), text);
+                        logclientf(ci, "chat: %s", text);
                     }
                 }
                 break;
@@ -2999,7 +3017,7 @@ namespace server
                 if(effect && !(ci->privilege || ci->local || hasmastergroup(ci) || hasadmingroup(ci)))
                 {
                     sendcnservmsgf(ci->clientnum, "\fs\f3Error:\fr You are currently muted. Reason: \"\fs\f4%s\fr\"", effect->reason);
-                    logoutf("%s(muted) <%s>: %s", colorname(cq), cq->team, text);
+                    logclientf(ci, "chat(muted) <%s>: %s", cq->team, text);
                 }
                 else
                 {
@@ -3010,7 +3028,7 @@ namespace server
                         if(t==cq || t->state.state==CS_SPECTATOR || t->state.aitype != AI_NONE || strcmp(cq->team, t->team)) continue;
                         sendf(t->clientnum, 1, "riis", N_SAYTEAM, cq->clientnum, text);
                     }
-                    logoutf("%s <%s>: %s", colorname(cq), cq->team, text);
+                    logclientf(ci, "chat <%s>: %s", cq->team, text);
                 }
                 break;
             }

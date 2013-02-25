@@ -557,7 +557,7 @@ namespace server
     
     void trycommand(clientinfo *ci, const char *cmd) 
     {
-        logoutf("Command: %s: %s", ci->name, cmd);
+    	logclientf(ci, "cmd: %s", cmd);
         
         vector<char*> args;
         

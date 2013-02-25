@@ -1214,6 +1214,7 @@ namespace server
     
     extern void trycommand(clientinfo *ci, const char *cmd);
     
+    extern void logclientf(clientinfo *ci, const char *fmt, ...);
     extern const char *colorname(clientinfo *ci, char *name = NULL);
     
     extern void sendcnservmsg(int cn, const char *s);

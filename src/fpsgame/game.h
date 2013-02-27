@@ -1188,7 +1188,7 @@ namespace server
     
     extern uint nextlocalmasterreq;
     
-    extern int persistentintermission, persistentteams, pauseondisconnect, mutespectators;
+    extern int persistentintermission, persistentteams, pauseondisconnect, mutespectators, racemode;
 
     extern vector<clientinfo *> connects, clients, bots;
 

@@ -378,6 +378,22 @@ namespace server
         }
     }
     
+    void cmd_racemode(clientinfo *ci, vector<char*> args)
+    {
+    	int v = -1;
+        if(args.length() >= 2) v = parse_toggle_arg(args[1], &server::racemode);
+
+        if(!v){
+        	sendservmsgf("\fs\f1Info:\fr Race mode \fs\f0%s\fr by \fs\f0%s\fr.", server::racemode ? "enabled" : "disabled" , colorname(ci));
+        }
+        else if(v == -1) {
+        	sendcnservmsg(ci->clientnum, "\fs\f3Error:\fr Usage: \fs\f2racemode <enable/disable>\fr");
+        }
+        else if(v == 1) {
+        	sendcnservmsgf(ci->clientnum, "\fs\f3Error:\fr State: Race mode is already \fs\f0%s\fr.", server::racemode ? "enabled" : "disabled");
+        }
+    }
+
     void cmd_instaweapon(clientinfo *ci, vector<char*> args)
     {
         if(args.length() < 2)
@@ -469,6 +485,7 @@ namespace server
         {"persistentteams", PRIV_MASTER, &cmd_persistentteams},
         {"mutespectators", PRIV_MASTER, &cmd_mutespectators},
         {"pauseondisconnect", PRIV_MASTER, &cmd_pauseondisconnect},
+        {"racemode", PRIV_MASTER, &cmd_racemode},
         {"instaweapon", PRIV_MASTER, &cmd_instaweapon},
         {"resumedelay", PRIV_MASTER, &cmd_resumedelay},
         {"timeleft", PRIV_MASTER, &cmd_timeleft},

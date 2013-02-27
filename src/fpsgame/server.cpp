@@ -48,6 +48,7 @@ namespace server
     string smapname = "";
     int pauseondisconnect = 0;
     int mutespectators = 0;
+    int racemode = 0;
     int persistentintermission, persistentteams, interm = 0;
     enet_uint32 lastsend = 0;
     int mastermode = MM_OPEN, mastermask = MM_PRIVSERV;
@@ -2829,6 +2830,13 @@ namespace server
             {
                 int val = getint(p);
                 if(!ci->local && !m_edit) break;
+                if(racemode) {
+                	spectate(ci);
+                    sendf(-1, 1, "ri3", N_SPECTATOR, ci->clientnum, 1);
+                    sendservmsgf("\fs\f0%s\fr has been spectated for entering edit mode while race mode is enabled.", colorname(ci));
+                    sendchangeteam(ci);
+                    break;
+                }
                 if(val ? ci->state.state!=CS_ALIVE && ci->state.state!=CS_DEAD : ci->state.state!=CS_EDITING) break;
                 if(smode)
                 {
@@ -3133,6 +3141,7 @@ namespace server
                 int type = getint(p);
                 loopk(5) getint(p);
                 if(!ci || ci->state.state==CS_SPECTATOR) break;
+                if(racemode) break;
                 QUEUE_MSG;
                 bool canspawn = canspawnitem(type);
                 if(i<MAXENTS && (sents.inrange(i) || canspawnitem(type)))
@@ -3159,6 +3168,7 @@ namespace server
                     case ID_FVAR: getfloat(p); break;
                     case ID_SVAR: getstring(text, p);
                 }
+                if(racemode) break;
                 if(ci && ci->state.state!=CS_SPECTATOR) QUEUE_MSG;
                 break;
             }
@@ -3547,6 +3557,7 @@ namespace server
                 int size = server::msgsizelookup(type);
                 if(size<=0) { disconnect_client(sender, DISC_MSGERR); return; }
                 loopi(size-1) getint(p);
+                if(racemode) break;
                 if(ci && cq && (ci != cq || ci->state.state!=CS_SPECTATOR)) { QUEUE_AI; QUEUE_MSG; }
                 break;
             }

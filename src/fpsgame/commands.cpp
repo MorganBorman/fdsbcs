@@ -147,46 +147,22 @@ namespace server
     	while(*input)
     	{
     		if(*input >= '0' && *input <= '9')
-    		{
     			numbers.add(*input);
-    		}
-    		else if(*input == 's' || *input == 'S')
-    		{
+    		else if((*input == 's' || *input == 'S') && numbers.length())
     			*expiry_time += (atoi(numbers.getbuf()));
-    			numbers.shrink(0);
-    		}
-    		else if(*input == 'm' || *input == 'M')
-    		{
+    		else if((*input == 'm' || *input == 'M') && numbers.length())
     			*expiry_time += (atoi(numbers.getbuf())*60);
-    			numbers.shrink(0);
-    		}
-    		else if(*input == 'h' || *input == 'H')
-    		{
+    		else if((*input == 'h' || *input == 'H') && numbers.length())
     			*expiry_time += (atoi(numbers.getbuf())*60*60);
-    			numbers.shrink(0);
-    		}
-    		else if(*input == 'd' || *input == 'D')
-    		{
+    		else if((*input == 'd' || *input == 'D') && numbers.length())
     			*expiry_time += (atoi(numbers.getbuf())*60*60*24);
-    			numbers.shrink(0);
-    		}
-    		else if(*input == 'y' || *input == 'Y')
-    		{
+    		else if((*input == 'y' || *input == 'Y') && numbers.length())
     			*expiry_time += (atoi(numbers.getbuf())*60*60*24*365);
-    			numbers.shrink(0);
-    		}
-    		else
-    		{
-    			return -1;
-    		}
+    		else return -1;
+    		numbers.shrink(0);
     		input++;
     	}
-
-    	if(numbers.length())
-    	{
-			*expiry_time += (atoi(numbers.getbuf()));
-    	}
-
+    	if(numbers.length()) *expiry_time += (atoi(numbers.getbuf()));
     	return 0;
     }
 
@@ -393,6 +369,33 @@ namespace server
         }
     }
 
+    void cmd_mutespectators(clientinfo *ci, vector<char*> args)
+    {
+        if(args.length() < 2)
+        {
+            sendcnservmsg(ci->clientnum, "\fs\f3Error:\fr Usage: \fs\f2mutespectators <enable/disable>\fr");
+            return;
+        }
+
+        if(!strcmp(args[1], "enable"))
+        {
+            if(server::mutespectators) return;
+            sendservmsgf("\fs\f1Info:\fr Mute spectators \fs\f0enabled\fr by \fs\f0%s\fr.", colorname(ci));
+            server::mutespectators = true;
+        }
+        else if(!strcmp(args[1], "disable"))
+        {
+            if(!server::mutespectators) return;
+            sendservmsgf("\fs\f1Info:\fr Mute spectators \fs\f4disabled\fr by \fs\f0%s\fr.", colorname(ci));
+            server::mutespectators = false;
+        }
+        else
+        {
+            sendcnservmsg(ci->clientnum, "\fs\f3Error:\fr Usage: \fs\f2mutespectators <enable/disable>\fr");
+            return;
+        }
+    }
+
     void cmd_pauseondisconnect(clientinfo *ci, vector<char*> args)
     {
         if(args.length() < 2)
@@ -509,6 +512,7 @@ namespace server
         {"resume", PRIV_MASTER, &cmd_resume},
         {"persistentintermission", PRIV_MASTER, &cmd_persistentintermission},
         {"persistentteams", PRIV_MASTER, &cmd_persistentteams},
+        {"mutespectators", PRIV_MASTER, &cmd_mutespectators},
         {"pauseondisconnect", PRIV_MASTER, &cmd_pauseondisconnect},
         {"instaweapon", PRIV_MASTER, &cmd_instaweapon},
         {"resumedelay", PRIV_MASTER, &cmd_resumedelay},

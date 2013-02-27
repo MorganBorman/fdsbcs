@@ -47,6 +47,7 @@ namespace server
 
     string smapname = "";
     int pauseondisconnect = 0;
+    int mutespectators = 0;
     int persistentintermission, persistentteams, interm = 0;
     enet_uint32 lastsend = 0;
     int mastermode = MM_OPEN, mastermask = MM_PRIVSERV;
@@ -246,7 +247,7 @@ namespace server
 
     vector<demofile> demos;
 
-    bool demonextmatch = false;
+    bool demonextmatch = true;
     stream *demotmp = NULL, *demorecord = NULL, *demoplayback = NULL;
     int nextplayback = 0, demomillis = 0;
 
@@ -2993,17 +2994,18 @@ namespace server
                 {
                     filtertext(text, text);
                     punitiveeffects::punitiveeffect* effect = punitiveeffects::search(getclientip(ci->clientnum), punitiveeffects::MUTE);
-                    if(effect && !(ci->privilege || ci->local || hasmastergroup(ci) || hasadmingroup(ci)))
+                    if((effect || mutespectators) && !(ci->privilege || ci->local || hasmastergroup(ci) || hasadmingroup(ci)))
                     {
-                        sendcnservmsgf(ci->clientnum, "\fs\f3Error:\fr You are currently muted. Reason: \"\fs\f4%s\fr\"", effect->reason);
-                        logclientf(ci, "chat(muted): %s", text);
+                        if(effect) sendcnservmsgf(ci->clientnum, "\fs\f3Error:\fr You are currently muted. Reason: \"\fs\f4%s\fr\"", effect->reason);
+                        else if(mutespectators) sendcnservmsgf(ci->clientnum, "\fs\f3Error:\fr You cannot speak because spectators are currently muted. (Use teamchat to speak with other spectators.)");
+                        logclientf(cq, "chat(muted): %s", text);
                     }
                     else
                     {
                         QUEUE_AI;
                         QUEUE_INT(N_TEXT);
                         QUEUE_STR(text);
-                        logclientf(ci, "chat: %s", text);
+                        logclientf(cq, "chat: %s", text);
                     }
                 }
                 break;
@@ -3017,10 +3019,11 @@ namespace server
                 if(effect && !(ci->privilege || ci->local || hasmastergroup(ci) || hasadmingroup(ci)))
                 {
                     sendcnservmsgf(ci->clientnum, "\fs\f3Error:\fr You are currently muted. Reason: \"\fs\f4%s\fr\"", effect->reason);
-                    logclientf(ci, "chat(muted) <%s>: %s", cq->team, text);
+                    logclientf(cq, "chat(muted) <%s>: %s", cq->team, text);
                 }
                 else
                 {
+                    /*
                     if(!ci || !cq || (ci->state.state==CS_SPECTATOR && !ci->local && !ci->privilege) || !m_teammode || !cq->team[0]) break;
                     loopv(clients)
                     {
@@ -3028,7 +3031,24 @@ namespace server
                         if(t==cq || t->state.state==CS_SPECTATOR || t->state.aitype != AI_NONE || strcmp(cq->team, t->team)) continue;
                         sendf(t->clientnum, 1, "riis", N_SAYTEAM, cq->clientnum, text);
                     }
-                    logclientf(ci, "chat <%s>: %s", cq->team, text);
+                    */
+                	if(cq->state.state==CS_SPECTATOR) { // If they're a spectator then send to all spectators.
+                        loopv(clients)
+                        {
+                            clientinfo *t = clients[i];
+                            if(t==cq || t->state.state!=CS_SPECTATOR || t->state.aitype != AI_NONE) continue;
+                            sendf(t->clientnum, 1, "riis", N_SAYTEAM, cq->clientnum, text);
+                        }
+                	}
+                	else { // If they're playing send it to all players on the same team.
+                        loopv(clients)
+                        {
+                            clientinfo *t = clients[i];
+                            if(t==cq || t->state.state==CS_SPECTATOR || t->state.aitype != AI_NONE || strcmp(cq->team, t->team)) continue;
+                            sendf(t->clientnum, 1, "riis", N_SAYTEAM, cq->clientnum, text);
+                        }
+                	}
+                    logclientf(cq, "chat <%s>: %s", cq->state.state!=CS_SPECTATOR ? cq->team : "spectators", text);
                 }
                 break;
             }

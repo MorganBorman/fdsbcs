@@ -135,8 +135,11 @@ namespace server
     	vector<char> numbers;
     	while(*input)
     	{
-    		if(*input >= '0' && *input <= '9')
+    		if(*input >= '0' && *input <= '9') {
     			numbers.add(*input);
+    			input++;
+    			continue;
+    		}
     		else if((*input == 's' || *input == 'S') && numbers.length())
     			*expiry_time += (atoi(numbers.getbuf()));
     		else if((*input == 'm' || *input == 'M') && numbers.length())

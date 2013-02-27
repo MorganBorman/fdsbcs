@@ -15,93 +15,82 @@ namespace server
     
     void cmd_ip(clientinfo *ci, vector<char*> args)
     {
-        if(hasadmingroup(ci) || hasmastergroup(ci))
-        {
-            if(args.length() < 2)
-            {
-                sendcnservmsg(ci->clientnum, "\fs\f3Error:\fr Usage: \fs\f2ip <cn>\fr");
-                return;
-            }
-            
-            int tcn = atoi(args[1]);
-            clientinfo *tci = getinfo(tcn);
-            
-            if(tci)
-            {
-                uint ip = getclientip(tci->clientnum);
-                uchar* ipc = (uchar*)&ip;
-                sendcnservmsgf(ci->clientnum, "\fs\f2Info:\fr Client(%i) ip: %hhu.%hhu.%hhu.%hhu", tci->clientnum, ipc[0], ipc[1], ipc[2], ipc[3]);
-            }
-            else
-            {
-                invalidclient(ci);
-            }
+        if(!hasadmingroup(ci) && !hasmastergroup(ci)) {
+        	insufficientpermissions(ci);
+        	return;
         }
-        else
-        {
-            insufficientpermissions(ci);
-        }
+
+		if(args.length() < 2)
+		{
+			sendcnservmsg(ci->clientnum, "\fs\f3Error:\fr Usage: \fs\f2ip <cn>\fr");
+			return;
+		}
+
+		int tcn = atoi(args[1]);
+		clientinfo *tci = getinfo(tcn);
+
+		if(!tci) {
+			invalidclient(ci);
+			return;
+		}
+
+		uint ip = getclientip(tci->clientnum);
+		uchar* ipc = (uchar*)&ip;
+		sendcnservmsgf(ci->clientnum, "\fs\f2Info:\fr Client(%i) ip: %hhu.%hhu.%hhu.%hhu", tci->clientnum, ipc[0], ipc[1], ipc[2], ipc[3]);
     }
     
     void cmd_master(clientinfo *ci, vector<char*> args)
     {
-        if(hasadmingroup(ci) || hasmastergroup(ci))
+        if(!hasadmingroup(ci) && !hasmastergroup(ci))
         {
-            setmaster(ci, true, "", ci->localauthname, ci->localauthdesc, PRIV_MASTER, true);
+        	insufficientpermissions(ci);
+        	return;
         }
-        else
-        {
-            insufficientpermissions(ci);
-        }
+		setmaster(ci, true, "", ci->localauthname, ci->localauthdesc, PRIV_MASTER, true);
     }
     
     void cmd_admin(clientinfo *ci, vector<char*> args)
     {
-        if(hasadmingroup(ci))
+        if(!hasadmingroup(ci))
         {
-            setmaster(ci, true, "", ci->localauthname, ci->localauthdesc, PRIV_ADMIN, true);
+        	insufficientpermissions(ci);
+        	return;
         }
-        else
-        {
-            insufficientpermissions(ci);
-        }
+		setmaster(ci, true, "", ci->localauthname, ci->localauthdesc, PRIV_ADMIN, true);
     }
     
     void cmd_names(clientinfo *ci, vector<char*> args)
     {
-        if(hasadmingroup(ci) || hasmastergroup(ci))
+        if(!hasadmingroup(ci) && !hasmastergroup(ci))
         {
-            if(args.length() < 2)
-            {
-                sendcnservmsg(ci->clientnum, "\fs\f3Error:\fr Usage: \fs\f2names <cn>\fr");
-                return;
-            }
-            
-            int tcn = atoi(args[1]);
-            clientinfo *tci = getinfo(tcn);
-            
-            if(tci)
-            {
-                uint ip = getclientip(tci->clientnum);
-                uint mask = 0xFFFF;
-                
-                if(!nextlocalmasterreq) nextlocalmasterreq = 1;
-                ci->localmasterreq = nextlocalmasterreq++;
-                
-                if(!requestlocalmasterf("names %u %u %u\n", ci->localmasterreq, ip, mask))
-                {
-                    sendf(ci->clientnum, 1, "ris", N_SERVMSG, "not connected to local master server.");
-                }
-            }
-            else
-            {
-                invalidclient(ci);
-            }
+        	insufficientpermissions(ci);
+        	return;
         }
-        else
-        {
-            insufficientpermissions(ci);
-        }
+
+		if(args.length() < 2)
+		{
+			sendcnservmsg(ci->clientnum, "\fs\f3Error:\fr Usage: \fs\f2names <cn>\fr");
+			return;
+		}
+
+		int tcn = atoi(args[1]);
+		clientinfo *tci = getinfo(tcn);
+
+		if(!tci) {
+			invalidclient(ci);
+			return;
+		}
+
+		uint ip = getclientip(tci->clientnum);
+		uint mask = 0xFFFF;
+
+		if(!nextlocalmasterreq) nextlocalmasterreq = 1;
+		ci->localmasterreq = nextlocalmasterreq++;
+
+		if(!requestlocalmasterf("names %u %u %u\n", ci->localmasterreq, ip, mask))
+		{
+			sendf(ci->clientnum, 1, "ris", N_SERVMSG, "not connected to local master server.");
+		}
     }
     
     int parse_ip_mask_string(const char* input, uint* ip, uint* mask, clientinfo** tci)
@@ -222,82 +211,72 @@ namespace server
 
     void cmd_mute(clientinfo *ci, vector<char*> args)
     {
-        if(hasadmingroup(ci) || hasmastergroup(ci))
+        if(!hasadmingroup(ci) && !hasmastergroup(ci))
         {
-			if(args.length() < 2)
-			{
-				sendcnservmsg(ci->clientnum, "\fs\f3Error:\fr Usage: \fs\f2mute <cn|ip>(:mask) (time) (reason)\fr");
-				return;
-			}
-			add_effect(ci, args, "mute");
+        	insufficientpermissions(ci);
+        	return;
         }
-        else
-        {
-            insufficientpermissions(ci);
-        }
+		if(args.length() < 2)
+		{
+			sendcnservmsg(ci->clientnum, "\fs\f3Error:\fr Usage: \fs\f2mute <cn|ip>(:mask) (time) (reason)\fr");
+			return;
+		}
+		add_effect(ci, args, "mute");
     }
 
     void cmd_spec(clientinfo *ci, vector<char*> args)
     {
-        if(hasadmingroup(ci) || hasmastergroup(ci))
+        if(!hasadmingroup(ci) && !hasmastergroup(ci))
         {
-			if(args.length() < 2)
-			{
-				sendcnservmsg(ci->clientnum, "\fs\f3Error:\fr Usage: \fs\f2spec <cn|ip>(:mask) (time) (reason)\fr");
-				return;
-			}
-			add_effect(ci, args, "spectate");
-		}
-		else
+        	insufficientpermissions(ci);
+        	return;
+        }
+		if(args.length() < 2)
 		{
-			insufficientpermissions(ci);
+			sendcnservmsg(ci->clientnum, "\fs\f3Error:\fr Usage: \fs\f2spec <cn|ip>(:mask) (time) (reason)\fr");
+			return;
 		}
+		add_effect(ci, args, "spectate");
     }
 
     void cmd_ban(clientinfo *ci, vector<char*> args)
     {
-        if(hasadmingroup(ci) || hasmastergroup(ci))
+        if(!hasadmingroup(ci) && !hasmastergroup(ci))
         {
-			if(args.length() < 2)
-			{
-				sendcnservmsg(ci->clientnum, "\fs\f3Error:\fr Usage: \fs\f2ban <cn|ip>(:mask) (time) (reason)\fr");
-				return;
-			}
-			add_effect(ci, args, "ban");
-		}
-		else
+        	insufficientpermissions(ci);
+        	return;
+        }
+		if(args.length() < 2)
 		{
-			insufficientpermissions(ci);
+			sendcnservmsg(ci->clientnum, "\fs\f3Error:\fr Usage: \fs\f2ban <cn|ip>(:mask) (time) (reason)\fr");
+			return;
 		}
+		add_effect(ci, args, "ban");
     }
 
     void cmd_limit(clientinfo *ci, vector<char*> args)
     {
-        if(hasadmingroup(ci) || hasmastergroup(ci))
+        if(!hasadmingroup(ci) && !hasmastergroup(ci))
         {
-			if(args.length() < 2)
-			{
-				sendcnservmsg(ci->clientnum, "\fs\f3Error:\fr Usage: \fs\f2limit <cn|ip>(:mask) (time) (reason)\fr");
-				return;
-			}
-			add_effect(ci, args, "limit");
-		}
-		else
+        	insufficientpermissions(ci);
+        	return;
+        }
+		if(args.length() < 2)
 		{
-			insufficientpermissions(ci);
+			sendcnservmsg(ci->clientnum, "\fs\f3Error:\fr Usage: \fs\f2limit <cn|ip>(:mask) (time) (reason)\fr");
+			return;
 		}
+		add_effect(ci, args, "limit");
     }
 
     void cmd_remumble(clientinfo *ci, vector<char*> args)
     {
-        if(hasadmingroup(ci) || hasmastergroup(ci))
+        if(!hasadmingroup(ci) && !hasmastergroup(ci))
         {
-        	loopv(clients) sendchangeteam(clients[i]);
+        	insufficientpermissions(ci);
+        	return;
         }
-        else
-        {
-            insufficientpermissions(ci);
-        }
+		loopv(clients) sendchangeteam(clients[i]);
     }
 
     void cmd_pause(clientinfo *ci, vector<char*> args)
@@ -315,111 +294,87 @@ namespace server
     	resumecounter = resumedelay;
     }
 
+    // returns 0 and sets toggleable if a valid value is specified.
+    // returns -1 if an invalid arg is specified.
+    // returns 1 if the arg is already in the state specified.
+    int parse_toggle_arg(char *arg, int *toggleable)
+    {
+    	char *t = arg;
+    	while(*t) { *t = tolower(*t); t++; }
+
+    	if(!strcmp(arg, "enable") || !strcmp(arg, "yes") || !strcmp(arg, "true") || !strcmp(arg, "1")) {
+    		if(*toggleable) return 1;
+    		*toggleable = 1;
+    	}
+    	else if(!strcmp(arg, "disable") || !strcmp(arg, "no") || !strcmp(arg, "false") || !strcmp(arg, "0")) {
+    		if(!(*toggleable)) return 1;
+    		*toggleable = 0;
+    	}
+    	else return -1;
+    	return 0;
+    }
+
     void cmd_persistentintermission(clientinfo *ci, vector<char*> args)
     {
-        if(args.length() < 2)
-        {
-            sendcnservmsg(ci->clientnum, "\fs\f3Error:\fr Usage: \fs\f2persistentintermission <enable/disable>\fr");
-            return;
+    	int v = -1;
+        if(args.length() >= 2) v = parse_toggle_arg(args[1], &server::persistentintermission);
+
+        if(!v){
+        	sendservmsgf("\fs\f1Info:\fr Peristent intermission \fs\f0%s\fr by \fs\f0%s\fr.", server::persistentintermission ? "enabled" : "disabled" , colorname(ci));
         }
-        
-        if(!strcmp(args[1], "enable"))
-        {
-            if(server::persistentintermission) return;
-            sendservmsgf("\fs\f1Info:\fr Peristent intermission \fs\f0enabled\fr by \fs\f0%s\fr.", colorname(ci));
-            server::persistentintermission = true;
+        else if(v == -1) {
+        	sendcnservmsg(ci->clientnum, "\fs\f3Error:\fr Usage: \fs\f2persistentintermission <enable/disable>\fr");
         }
-        else if(!strcmp(args[1], "disable"))
-        {
-            if(!server::persistentintermission) return;
-            sendservmsgf("\fs\f1Info:\fr Peristent intermission \fs\f4disabled\fr by \fs\f0%s\fr.", colorname(ci));
-            server::persistentintermission = false;
-        }
-        else
-        {
-            sendcnservmsg(ci->clientnum, "\fs\f3Error:\fr Usage: \fs\f2persistentintermission <enable/disable>\fr");
-            return;
+        else if(v == 1) {
+        	sendcnservmsgf(ci->clientnum, "\fs\f3Error:\fr State: Peristent intermission is already \fs\f0%s\fr.", server::persistentintermission ? "enabled" : "disabled");
         }
     }
     
     void cmd_persistentteams(clientinfo *ci, vector<char*> args)
     {
-        if(args.length() < 2)
-        {
-            sendcnservmsg(ci->clientnum, "\fs\f3Error:\fr Usage: \fs\f2persistentteams <enable/disable>\fr");
-            return;
+    	int v = -1;
+        if(args.length() >= 2) v = parse_toggle_arg(args[1], &server::persistentteams);
+
+        if(!v){
+        	sendservmsgf("\fs\f1Info:\fr Persistent teams \fs\f0%s\fr by \fs\f0%s\fr.", server::persistentteams ? "enabled" : "disabled" , colorname(ci));
         }
-        
-        if(!strcmp(args[1], "enable"))
-        {
-            if(server::persistentteams) return;
-            sendservmsgf("\fs\f1Info:\fr Persistent teams \fs\f0enabled\fr by \fs\f0%s\fr.", colorname(ci));
-            server::persistentteams = true;
+        else if(v == -1) {
+        	sendcnservmsg(ci->clientnum, "\fs\f3Error:\fr Usage: \fs\f2persistentteams <enable/disable>\fr");
         }
-        else if(!strcmp(args[1], "disable"))
-        {
-            if(!server::persistentteams) return;
-            sendservmsgf("\fs\f1Info:\fr Persistent teams \fs\f4disabled\fr by \fs\f0%s\fr.", colorname(ci));
-            server::persistentteams = false;
-        }
-        else
-        {
-            sendcnservmsg(ci->clientnum, "\fs\f3Error:\fr Usage: \fs\f2persistentteams <enable/disable>\fr");
-            return;
+        else if(v == 1) {
+        	sendcnservmsgf(ci->clientnum, "\fs\f3Error:\fr State: Persistent teams is already \fs\f0%s\fr.", server::persistentteams ? "enabled" : "disabled");
         }
     }
 
     void cmd_mutespectators(clientinfo *ci, vector<char*> args)
     {
-        if(args.length() < 2)
-        {
-            sendcnservmsg(ci->clientnum, "\fs\f3Error:\fr Usage: \fs\f2mutespectators <enable/disable>\fr");
-            return;
-        }
+    	int v = -1;
+        if(args.length() >= 2) v = parse_toggle_arg(args[1], &server::mutespectators);
 
-        if(!strcmp(args[1], "enable"))
-        {
-            if(server::mutespectators) return;
-            sendservmsgf("\fs\f1Info:\fr Mute spectators \fs\f0enabled\fr by \fs\f0%s\fr.", colorname(ci));
-            server::mutespectators = true;
+        if(!v){
+        	sendservmsgf("\fs\f1Info:\fr Mute spectators \fs\f0%s\fr by \fs\f0%s\fr.", server::mutespectators ? "enabled" : "disabled" , colorname(ci));
         }
-        else if(!strcmp(args[1], "disable"))
-        {
-            if(!server::mutespectators) return;
-            sendservmsgf("\fs\f1Info:\fr Mute spectators \fs\f4disabled\fr by \fs\f0%s\fr.", colorname(ci));
-            server::mutespectators = false;
+        else if(v == -1) {
+        	sendcnservmsg(ci->clientnum, "\fs\f3Error:\fr Usage: \fs\f2mutespectators <enable/disable>\fr");
         }
-        else
-        {
-            sendcnservmsg(ci->clientnum, "\fs\f3Error:\fr Usage: \fs\f2mutespectators <enable/disable>\fr");
-            return;
+        else if(v == 1) {
+        	sendcnservmsgf(ci->clientnum, "\fs\f3Error:\fr State: Mute spectators is already \fs\f0%s\fr.", server::mutespectators ? "enabled" : "disabled");
         }
     }
 
     void cmd_pauseondisconnect(clientinfo *ci, vector<char*> args)
     {
-        if(args.length() < 2)
-        {
-            sendcnservmsg(ci->clientnum, "\fs\f3Error:\fr Usage: \fs\f2pauseondisconnect <enable/disable>\fr");
-            return;
+    	int v = -1;
+        if(args.length() >= 2) v = parse_toggle_arg(args[1], &server::pauseondisconnect);
+
+        if(!v){
+        	sendservmsgf("\fs\f1Info:\fr Pause on disconnect \fs\f0%s\fr by \fs\f0%s\fr.", server::pauseondisconnect ? "enabled" : "disabled" , colorname(ci));
         }
-        
-        if(!strcmp(args[1], "enable"))
-        {
-            if(server::pauseondisconnect) return;
-            sendservmsgf("\fs\f1Info:\fr Pause on disconnect \fs\f0enabled\fr by \fs\f0%s\fr.", colorname(ci));
-            server::pauseondisconnect = true;
+        else if(v == -1) {
+        	sendcnservmsg(ci->clientnum, "\fs\f3Error:\fr Usage: \fs\f2pauseondisconnect <enable/disable>\fr");
         }
-        else if(!strcmp(args[1], "disable"))
-        {
-            if(!server::pauseondisconnect) return;
-            sendservmsgf("\fs\f1Info:\fr Pause on disconnect \fs\f4disabled\fr by \fs\f0%s\fr.", colorname(ci));
-            server::pauseondisconnect = false;
-        }
-        else
-        {
-            sendcnservmsg(ci->clientnum, "\fs\f3Error:\fr Usage: \fs\f2pauseondisconnect <enable/disable>\fr");
-            return;
+        else if(v == 1) {
+        	sendcnservmsgf(ci->clientnum, "\fs\f3Error:\fr State: Pause on disconnect is already \fs\f0%s\fr.", server::pauseondisconnect ? "enabled" : "disabled");
         }
     }
     

@@ -3004,7 +3004,7 @@ namespace server
                 {
                     filtertext(text, text);
                     punitiveeffects::punitiveeffect* effect = punitiveeffects::search(getclientip(ci->clientnum), punitiveeffects::MUTE);
-                    if((effect || mutespectators) && !(ci->privilege || ci->local || hasmastergroup(ci) || hasadmingroup(ci)))
+                    if((effect || (mutespectators && cq->state.state==CS_SPECTATOR)) && !(ci->privilege || ci->local || hasmastergroup(ci) || hasadmingroup(ci)))
                     {
                         if(effect) sendcnservmsgf(ci->clientnum, "\fs\f3Error:\fr You are currently muted. Reason: \"\fs\f4%s\fr\"", effect->reason);
                         else if(mutespectators) sendcnservmsgf(ci->clientnum, "\fs\f3Error:\fr You cannot speak because spectators are currently muted. (Use teamchat to speak with other spectators.)");

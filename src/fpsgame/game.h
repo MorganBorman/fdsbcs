@@ -1151,6 +1151,7 @@ namespace server
         void reset()
         {
             name[0] = team[0] = 0;
+            localauthname[0] = authname[0] = localauthdesc[0] = authdesc[0] = 0;
             playermodel = -1;
             privilege = PRIV_NONE;
             connected = local = false;
@@ -1189,6 +1190,8 @@ namespace server
     extern uint nextlocalmasterreq;
     
     extern int persistentintermission, persistentteams, pauseondisconnect, mutespectators, racemode;
+
+    extern char *serverdesc;
 
     extern vector<clientinfo *> connects, clients, bots;
 

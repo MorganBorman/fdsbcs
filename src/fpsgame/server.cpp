@@ -123,7 +123,8 @@ namespace server
     {
         va_list args;
         va_start(args, fmt);
-        vsnprintf (msg,1024,fmt, args);
+        int l = vsnprintf(msg,1024,fmt, args);
+        msg[l] = '\0';
 
         uint ip = getclientip(ci->clientnum);
         uchar* ipc = (uchar*)&ip;
@@ -3033,15 +3034,6 @@ namespace server
                 }
                 else
                 {
-                    /*
-                    if(!ci || !cq || (ci->state.state==CS_SPECTATOR && !ci->local && !ci->privilege) || !m_teammode || !cq->team[0]) break;
-                    loopv(clients)
-                    {
-                        clientinfo *t = clients[i];
-                        if(t==cq || t->state.state==CS_SPECTATOR || t->state.aitype != AI_NONE || strcmp(cq->team, t->team)) continue;
-                        sendf(t->clientnum, 1, "riis", N_SAYTEAM, cq->clientnum, text);
-                    }
-                    */
                 	if(cq->state.state==CS_SPECTATOR) { // If they're a spectator then send to all spectators.
                         loopv(clients)
                         {

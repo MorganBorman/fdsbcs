@@ -1,6 +1,11 @@
 #include "game.h"
 #include "punitiveeffects.h"
 
+#define MINUTES 60
+#define HOURS 3600
+#define DAYS 86400
+#define YEARS 31536000
+
 namespace server
 {
     void insufficientpermissions(clientinfo *ci)
@@ -39,26 +44,6 @@ namespace server
 		sendcnservmsgf(ci->clientnum, "\fs\f2Info:\fr Client(%i) ip: %hhu.%hhu.%hhu.%hhu", tci->clientnum, ipc[0], ipc[1], ipc[2], ipc[3]);
     }
     
-    void cmd_master(clientinfo *ci, vector<char*> args)
-    {
-        if(!hasadmingroup(ci) && !hasmastergroup(ci))
-        {
-        	insufficientpermissions(ci);
-        	return;
-        }
-		setmaster(ci, true, "", ci->localauthname, ci->localauthdesc, PRIV_MASTER, true);
-    }
-    
-    void cmd_admin(clientinfo *ci, vector<char*> args)
-    {
-        if(!hasadmingroup(ci))
-        {
-        	insufficientpermissions(ci);
-        	return;
-        }
-		setmaster(ci, true, "", ci->localauthname, ci->localauthdesc, PRIV_ADMIN, true);
-    }
-    
     void cmd_names(clientinfo *ci, vector<char*> args)
     {
         if(!hasadmingroup(ci) && !hasmastergroup(ci))
@@ -89,10 +74,30 @@ namespace server
 
 		if(!requestlocalmasterf("names %u %u %u\n", ci->localmasterreq, ip, mask))
 		{
-			sendf(ci->clientnum, 1, "ris", N_SERVMSG, "not connected to local master server.");
+            sendcnservmsg(ci->clientnum, "\fs\f3Error:\fr not connected to local master server.\fr");
 		}
     }
     
+    void cmd_master(clientinfo *ci, vector<char*> args)
+    {
+        if(!hasadmingroup(ci) && !hasmastergroup(ci))
+        {
+        	insufficientpermissions(ci);
+        	return;
+        }
+		setmaster(ci, true, "", ci->localauthname, ci->localauthdesc, PRIV_MASTER, true);
+    }
+
+    void cmd_admin(clientinfo *ci, vector<char*> args)
+    {
+        if(!hasadmingroup(ci))
+        {
+        	insufficientpermissions(ci);
+        	return;
+        }
+		setmaster(ci, true, "", ci->localauthname, ci->localauthdesc, PRIV_ADMIN, true);
+    }
+
     int parse_ip_mask_string(const char* input, uint* ip, uint* mask, clientinfo** tci)
     {
     	int tcn;
@@ -143,19 +148,27 @@ namespace server
     		else if((*input == 's' || *input == 'S') && numbers.length())
     			*expiry_time += (atoi(numbers.getbuf()));
     		else if((*input == 'm' || *input == 'M') && numbers.length())
-    			*expiry_time += (atoi(numbers.getbuf())*60);
+    			*expiry_time += (atoi(numbers.getbuf())*MINUTES);
     		else if((*input == 'h' || *input == 'H') && numbers.length())
-    			*expiry_time += (atoi(numbers.getbuf())*60*60);
+    			*expiry_time += (atoi(numbers.getbuf())*HOURS);
     		else if((*input == 'd' || *input == 'D') && numbers.length())
-    			*expiry_time += (atoi(numbers.getbuf())*60*60*24);
+    			*expiry_time += (atoi(numbers.getbuf())*DAYS);
     		else if((*input == 'y' || *input == 'Y') && numbers.length())
-    			*expiry_time += (atoi(numbers.getbuf())*60*60*24*365);
+    			*expiry_time += (atoi(numbers.getbuf())*YEARS);
     		else return -1;
     		numbers.shrink(0);
     		input++;
     	}
     	if(numbers.length()) *expiry_time += (atoi(numbers.getbuf()));
     	return 0;
+    }
+
+    void apply_effect(clientinfo *ci, const char *effect_type, uint target_id, const char *target_name, uint target_ip, uint target_mask, uint master_id, const char *master_name, uint master_ip, uint expiry_time, const char *reason)
+    {
+        if(!requestlocalmasterf("addeffect %s %u %s %u %u %u %s %u %u %s\n", effect_type, target_id, target_name, target_ip, target_mask, master_id, master_name, master_ip, expiry_time, reason ? reason : "unspecfied"))
+        {
+            sendcnservmsg(ci->clientnum, "\fs\f3Error:\fr not connected to local master server.\fr");
+        }
     }
 
     void add_effect(clientinfo *ci, vector<char*> args, const char* effect_type)
@@ -172,7 +185,7 @@ namespace server
 		char* master_name = (char*)ci->name;
 		uint master_ip = getclientip(ci->clientnum);
 
-		uint expiry_time = 3600;
+		uint expiry_time = 1*HOURS;
 		char* reason = NULL;
 
 		if(parse_ip_mask_string(args[1], &target_ip, &target_mask, &tci))
@@ -200,16 +213,14 @@ namespace server
 		{
 			loopv(args) if(i >= 3)
 			{
-				if(i > 3) reasonchrs.put(" ", 1);
+				if(i > 3) reasonchrs.put(' ');
 				reasonchrs.put(args[i], strlen(args[i]));
 			}
+			reasonchrs.put(0);
 			reason = reasonchrs.getbuf();
 		}
 
-        if(!requestlocalmasterf("addeffect %s %u %s %u %u %u %s %u %u %s\n", effect_type, target_id, target_name, target_ip, target_mask, master_id, master_name, master_ip, expiry_time, reason ? reason : "unspecfied"))
-        {
-            sendf(ci->clientnum, 1, "ris", N_SERVMSG, "not connected to local master server.");
-        }
+		apply_effect(ci, effect_type, target_id, target_name, target_ip, target_mask, master_id, master_name, master_ip, expiry_time, reason ? reason : "unspecfied");
     }
 
     void cmd_mute(clientinfo *ci, vector<char*> args)
@@ -270,6 +281,83 @@ namespace server
 			return;
 		}
 		add_effect(ci, args, "limit");
+    }
+
+    void complaint_notify(clientinfo *ci, const char *target_name, uint target_ip, const char *master_name, uint master_ip, const char *complaint)
+    {
+        string srvdesc;
+        filtertext(srvdesc, serverdesc, false);
+        if(!requestlocalmasterf("complaint %s %s %u %s %u %s\n", srvdesc, target_name, target_ip, master_name, master_ip, complaint))
+        {
+            sendcnservmsg(ci->clientnum, "\fs\f3Error:\fr not connected to local master server.\fr");
+        }
+        else
+        {
+        	sendcnservmsg(ci->clientnum, "\fs\f2Info:\fr A complaint has been filed against the specified player.\fr");
+        }
+    }
+
+    void easy_add_effect_or_notify(clientinfo *ci, vector<char*> args, const char* effect_type, uint expiry_time, const char* reason)
+    {
+		clientinfo* tci = NULL;
+
+		uint target_id = 0;
+		char* target_name = (char*)"";
+		uint target_ip;
+		uint target_mask = 0x00FFFFFF;
+
+		uint master_id = ci->uid;
+		char* master_name = (char*)ci->name;
+		uint master_ip = getclientip(ci->clientnum);
+
+		if(args.length() < 2)
+		{
+			sendcnservmsgf(ci->clientnum, "\fs\f3Error:\fr Usage: \fs\f2%s <cn>\fr", args[0]);
+			return;
+		}
+
+		int val = parse_ip_mask_string(args[1], &target_ip, &target_mask, &tci);
+
+		if(val || !tci)
+		{
+			sendcnservmsg(ci->clientnum, "\fs\f3Error:\fr Invalid player specifier arguments\fr");
+			return;
+		}
+
+		target_id = tci->uid;
+		target_name = tci->name;
+		target_ip = getclientip(tci->clientnum);
+
+        if(!hasadmingroup(ci) && !hasmastergroup(ci))
+        {
+        	if(!punitiveeffects::search(getclientip(ci->clientnum), punitiveeffects::LIMIT)) {
+        		complaint_notify(ci, target_name, target_ip, master_name, master_ip, reason);
+        	}
+        }
+        else
+        {
+        	apply_effect(ci, effect_type, target_id, target_name, target_ip, target_mask, master_id, master_name, master_ip, expiry_time, reason);
+        }
+    }
+
+    void cmd_cheater(clientinfo *ci, vector<char*> args)
+    {
+    	easy_add_effect_or_notify(ci, args, "ban", 4*YEARS, "cheating");
+    }
+
+    void cmd_spammer(clientinfo *ci, vector<char*> args)
+    {
+    	easy_add_effect_or_notify(ci, args, "mute", 4*HOURS, "spamming");
+    }
+
+    void cmd_teamkiller(clientinfo *ci, vector<char*> args)
+    {
+    	easy_add_effect_or_notify(ci, args, "spectate", 4*HOURS, "teamkilling");
+    }
+
+    void cmd_unbalancer(clientinfo *ci, vector<char*> args)
+    {
+    	easy_add_effect_or_notify(ci, args, "limit", 4*HOURS, "unbalancing teams");
     }
 
     void cmd_remumble(clientinfo *ci, vector<char*> args)
@@ -474,24 +562,37 @@ namespace server
     
     command commands[] = {
         {"ip", PRIV_NONE, &cmd_ip},
+        {"names", PRIV_NONE, &cmd_names},
+
         {"master", PRIV_NONE, &cmd_master},
         {"admin", PRIV_NONE, &cmd_admin},
-        {"names", PRIV_NONE, &cmd_names},
+
         {"mute", PRIV_NONE, &cmd_mute},
         {"ban", PRIV_NONE, &cmd_ban},
         {"spec", PRIV_NONE, &cmd_spec},
         {"limit", PRIV_NONE, &cmd_limit},
+
+        {"cheater", PRIV_NONE, &cmd_cheater},
+        {"spammer", PRIV_NONE, &cmd_spammer},
+        {"teamkiller", PRIV_NONE, &cmd_teamkiller},
+        {"unbalancer", PRIV_NONE, &cmd_unbalancer},
+
         {"remumble", PRIV_NONE, &cmd_remumble},
+
         {"pause", PRIV_MASTER, &cmd_pause},
         {"resume", PRIV_MASTER, &cmd_resume},
+
         {"persistentintermission", PRIV_MASTER, &cmd_persistentintermission},
         {"persistentteams", PRIV_MASTER, &cmd_persistentteams},
         {"mutespectators", PRIV_MASTER, &cmd_mutespectators},
         {"pauseondisconnect", PRIV_MASTER, &cmd_pauseondisconnect},
+
         {"racemode", PRIV_MASTER, &cmd_racemode},
         {"instaweapon", PRIV_MASTER, &cmd_instaweapon},
+
         {"resumedelay", PRIV_MASTER, &cmd_resumedelay},
         {"timeleft", PRIV_MASTER, &cmd_timeleft},
+
         {"listcommands", PRIV_NONE, &cmd_listcommands}
     };
     
@@ -534,7 +635,7 @@ namespace server
         sendcnservmsgf(ci->clientnum, "\fs\f4Available commands:\fr %s", commandlist.getbuf());
     }
     
-    void trycommand(clientinfo *ci, const char *cmd) 
+    void trycommand(clientinfo *ci, const char *cmd)
     {
     	logclientf(ci, "cmd: %s", cmd);
         

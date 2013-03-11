@@ -118,9 +118,19 @@ namespace server
     }
 
     char msg[1024];
+    const char log_date_format[] = "%F_%T";
 
     void logclientf(clientinfo *ci, const char *fmt, ...)
     {
+        time_t rawtime;
+        struct tm * timeinfo;
+
+        time(&rawtime);
+        timeinfo = localtime(&rawtime);
+
+        char date_buffer[80];
+        strftime(date_buffer, 80, log_date_format, timeinfo);
+
         va_list args;
         va_start(args, fmt);
         int l = vsnprintf(msg,1024,fmt, args);
@@ -129,7 +139,7 @@ namespace server
         uint ip = getclientip(ci->clientnum);
         uchar* ipc = (uchar*)&ip;
 
-        logoutf("%hhu.%hhu.%hhu.%hhu (%s,%s) %s: %s", ipc[0], ipc[1], ipc[2], ipc[3], ci->localauthname, ci->authname, colorname(ci), msg);
+        logoutf("%s %hhu.%hhu.%hhu.%hhu (%s,%s) %s: %s", date_buffer, ipc[0], ipc[1], ipc[2], ipc[3], ci->localauthname, ci->authname, colorname(ci), msg);
 
         va_end(args);
     }
@@ -757,6 +767,74 @@ namespace server
         loopi(n) delete[] demos[n].data;
         demos.remove(0, n);
     }
+
+    void savedemofile(int num, const char* path)
+    {
+        stream *f = openfile(path, "wb");
+        if(!f) return;
+
+        demofile &d = demos[num];
+
+        f->write(d.data, d.len);
+        f->close();
+    }
+
+	vector<uint> dmo_participants;
+	vector<dmo_tag> dmo_tags;
+
+    void send_demo_recorded_message(const char *filename, const char *dmo_mode_name, const char *dmo_map_name)
+    {
+    	char tmpbuf[80];
+    	int tmplen;
+
+    	vector<char> message_buf;
+
+    	loopv(dmo_participants)
+    	{
+		    tmplen = snprintf(tmpbuf, 80, "%u ", dmo_participants[i]);
+    		message_buf.put(tmpbuf, tmplen);
+    	}
+    	message_buf.put("0 ", 2);
+
+    	loopv(dmo_tags)
+    	{
+		    tmplen = snprintf(tmpbuf, 80, "%u %s, ", dmo_tags[i].uid, dmo_tags[i].tag);
+    		message_buf.put(tmpbuf, tmplen);
+    	}
+    	message_buf[message_buf.length()-2] = '\0';
+
+		if(!requestlocalmasterf("demorecorded |%s| %s %s %s\n", filename, dmo_mode_name, dmo_map_name, message_buf.getbuf()))
+		{
+            sendservmsg("\fs\f3Error:\fr Demo data not recorded: not connected to local master server.\fr");
+		}
+    }
+
+    SVAR(savedemopath, "./");
+    const char dmo_date_format[] = "%Y_%m_%d_%H_%M";
+    const char dmo_filename_format[] = "%s%s_%s_%s.dmo";
+
+    void savelastdemo()
+    {
+        int countdemo = demos.length();
+		if(countdemo==0) return;
+		int num = countdemo-1;
+
+        time_t rawtime;
+        struct tm * timeinfo;
+
+        time(&rawtime);
+        timeinfo = localtime(&rawtime);
+
+        char date_buffer[80];
+        strftime(date_buffer, 80, dmo_date_format, timeinfo);
+
+        int len = snprintf(NULL, 0, dmo_filename_format, savedemopath, date_buffer, modename(gamemode), smapname) + 1;
+        char buffer[len];
+        snprintf(buffer, len, dmo_filename_format, savedemopath, date_buffer, modename(gamemode), smapname);
+
+        savedemofile(num, buffer);
+        send_demo_recorded_message(buffer, modename(gamemode), smapname);
+    }
  
     void adddemo()
     {
@@ -786,6 +864,7 @@ namespace server
 
         prunedemos(1);
         adddemo();
+        savelastdemo();
     }
 
     void writedemo(int chan, void *data, int len)
@@ -1661,9 +1740,17 @@ namespace server
         scores.shrink(0);
         shouldcheckteamkills = false;
         teamkills.shrink(0);
+        dmo_participants.setsize(0);
+        loopv(dmo_tags) free(dmo_tags[i].tag);
+        dmo_tags.setsize(0);
         loopv(clients)
         {
             clientinfo *ci = clients[i];
+            if(ci->uid > 0) {
+            	if(dmo_participants.find(ci->uid) == -1) {
+            		dmo_participants.add(ci->uid);
+            	}
+            }
             ci->state.timeplayed += lastmillis - ci->state.lasttimeplayed;
         }
 
@@ -2383,6 +2470,12 @@ namespace server
         filtertext(ci->authname, name_str, false, 100);
         explodelist(groups_str, ci->groups);
         
+        if(ci-uid > 0) {
+        	if(dmo_participants.find(ci->uid) == -1) {
+        		dmo_participants.add(ci->uid);
+        	}
+        }
+
         sendchangeteam(ci);
         
         if(ci->authkickvictim >= 0)

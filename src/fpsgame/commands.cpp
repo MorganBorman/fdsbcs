@@ -505,6 +505,47 @@ namespace server
         
         sendservmsgf("\fs\f1Info:\fr Insta weapon now set to: \fs\f4%s\fr by \fs\f0%s\fr.", guns[w].name, colorname(ci));
     }
+
+    void strip_commas(char *str)
+    {
+    	char *p = str;
+    	while(*p++) if(*p == ',') *p = ' ';
+    }
+
+    void cmd_tagdemo(clientinfo *ci, vector<char*> args)
+    {
+        if(!ci->uid)
+        {
+            sendcnservmsg(ci->clientnum, "\fs\f3Error:\fr You must be verified to use this feature.");
+            return;
+        }
+        if(args.length() < 2)
+        {
+            sendcnservmsg(ci->clientnum, "\fs\f3Error:\fr Usage: \fs\f2tagdemo <tag>\fr");
+            return;
+        }
+
+        vector<char> tag_text;
+        loopv(args)
+        {
+        	if(!i) continue; // skip the first arg
+        	tag_text.put(args[i], strlen(args[i]));
+        	tag_text.put(' ');
+        }
+        tag_text[tag_text.length()-1] = '\0';
+
+        // since comma is used to separate these later, strip any input commas out
+        strip_commas(tag_text.getbuf());
+
+        dmo_tag dt;
+        dt.uid = ci->uid;
+        dt.tag = (char*)malloc(sizeof(char)*tag_text.length());
+        strncpy(dt.tag, tag_text.getbuf(), tag_text.length());
+
+        dmo_tags.add(dt);
+
+        sendcnservmsgf(ci->clientnum, "\fs\f1Info:\fr tagged demo: '%s'", dt.tag);
+    }
     
     void cmd_resumedelay(clientinfo *ci, vector<char*> args)
     {
@@ -589,6 +630,8 @@ namespace server
 
         {"racemode", PRIV_MASTER, &cmd_racemode},
         {"instaweapon", PRIV_MASTER, &cmd_instaweapon},
+
+        {"tagdemo", PRIV_NONE, &cmd_tagdemo},
 
         {"resumedelay", PRIV_MASTER, &cmd_resumedelay},
         {"timeleft", PRIV_MASTER, &cmd_timeleft},

@@ -1188,7 +1188,13 @@ namespace server
     };
     
     extern uint nextlocalmasterreq;
-    
+
+    typedef struct {
+    	uint uid;
+    	char *tag;
+    } dmo_tag;
+
+    extern vector<dmo_tag> dmo_tags;
     extern int persistentintermission, persistentteams, pauseondisconnect, mutespectators, racemode;
 
     extern char *serverdesc;

@@ -791,19 +791,21 @@ namespace server
 
     	loopv(dmo_participants)
     	{
-		    tmplen = snprintf(tmpbuf, 80, "%u ", dmo_participants[i]);
+		    tmplen = snprintf(tmpbuf, 80, "%u,", dmo_participants[i]);
     		message_buf.put(tmpbuf, tmplen);
     	}
-    	message_buf.put("0 ", 2);
+    	message_buf[message_buf.length()-1] = '|';
 
     	loopv(dmo_tags)
     	{
-		    tmplen = snprintf(tmpbuf, 80, "%u %s, ", dmo_tags[i].uid, dmo_tags[i].tag);
+		    tmplen = snprintf(tmpbuf, 80, "%u:%s,", dmo_tags[i].uid, dmo_tags[i].tag);
     		message_buf.put(tmpbuf, tmplen);
     	}
-    	message_buf[message_buf.length()-2] = '\0';
+    	message_buf[message_buf.length()-1] = '\0';
 
-		if(!requestlocalmasterf("demorecorded |%s| %s %s %s\n", filename, dmo_mode_name, dmo_map_name, message_buf.getbuf()))
+        string srvdesc;
+        filtertext(srvdesc, serverdesc, false);
+		if(!requestlocalmasterf("demorecorded %s|%s|%s|%s|%s\n", filename, srvdesc, dmo_mode_name, dmo_map_name, message_buf.getbuf()))
 		{
             sendservmsg("\fs\f3Error:\fr Demo data not recorded: not connected to local master server.\fr");
 		}

@@ -506,10 +506,10 @@ namespace server
         sendservmsgf("\fs\f1Info:\fr Insta weapon now set to: \fs\f4%s\fr by \fs\f0%s\fr.", guns[w].name, colorname(ci));
     }
 
-    void strip_commas(char *str)
+    void strip_reserved(char *str)
     {
     	char *p = str;
-    	while(*p++) if(*p == ',') *p = ' ';
+    	while(*p++) if(*p == ',' || *p == '|') *p = ' ';
     }
 
     void cmd_tagdemo(clientinfo *ci, vector<char*> args)
@@ -535,7 +535,7 @@ namespace server
         tag_text[tag_text.length()-1] = '\0';
 
         // since comma is used to separate these later, strip any input commas out
-        strip_commas(tag_text.getbuf());
+        strip_reserved(tag_text.getbuf());
 
         dmo_tag dt;
         dt.uid = ci->uid;

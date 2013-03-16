@@ -3372,6 +3372,7 @@ namespace server
                     spinfo->state.lasttimeplayed = lastmillis;
                     aiman::addclient(spinfo);
                     if(spinfo->clientmap[0] || spinfo->mapcrc) checkmaps();
+                    if(pauseondisconnect && gamepaused) sendspawn(spinfo);
                 }
                 sendf(-1, 1, "ri3", N_SPECTATOR, spectator, val);
                 if(spectator!=sender) sendservmsgf("\fs\f0%s\fr has been %s by \fs\f0%s\fr.", colorname(spinfo), val ? "spectated" : "unspectated", colorname(ci));

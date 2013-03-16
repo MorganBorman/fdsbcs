@@ -43,3 +43,5 @@ nosetests.xml
 .pydevproject
 /packages
 /test.log
+/server-init.cfg
+/server-init.pluto.cfg

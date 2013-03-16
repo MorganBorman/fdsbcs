@@ -794,14 +794,16 @@ namespace server
 		    tmplen = snprintf(tmpbuf, 80, "%u,", dmo_participants[i]);
     		message_buf.put(tmpbuf, tmplen);
     	}
-    	message_buf[message_buf.length()-1] = '|';
+    	if(message_buf.length()) message_buf[message_buf.length()-1] = '|';
+    	else message_buf.put('|');
 
     	loopv(dmo_tags)
     	{
 		    tmplen = snprintf(tmpbuf, 80, "%u:%s,", dmo_tags[i].uid, dmo_tags[i].tag);
     		message_buf.put(tmpbuf, tmplen);
     	}
-    	message_buf[message_buf.length()-1] = '\0';
+    	if(message_buf.length() && message_buf[message_buf.length()-1] == ',') message_buf[message_buf.length()-1] = '\0';
+    	else message_buf.put('\0');
 
         string srvdesc;
         filtertext(srvdesc, serverdesc, false);
@@ -2612,6 +2614,7 @@ namespace server
             names_output.put(entry_str, strlen(entry_str));
             delete ne;
         }
+        names_output.put('\0');
         
         sendcnservmsgf(ci->clientnum, "\fs\f1Info:\fr Names:%s", names_output.getbuf());
         names.deletearrays();

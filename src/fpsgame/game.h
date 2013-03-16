@@ -1143,7 +1143,7 @@ namespace server
 
         void cleanauth(bool full = true)
         {
-            authreq = 0;
+            authreq = localmasterreq = 0;
             if(authchallenge) { freechallenge(authchallenge); authchallenge = NULL; }
             if(full) cleanauthkick();
         }

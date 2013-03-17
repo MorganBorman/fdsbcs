@@ -368,6 +368,8 @@ namespace server
 	extern int resumetime;
 	extern int resumecounter;
     extern int instaweapon;
+    extern int allow_arenamode;
+    extern int allow_instaweapon;
     extern bool gamepaused;
 }
 
@@ -552,6 +554,7 @@ struct fpsent : dynent, fpsstate
     int lastpickup, lastpickupmillis, lastbase, lastrepammo, flagpickup, tokens;
     vec lastcollect;
     int frags, flags, deaths, totaldamage, totalshots;
+    int arena_round_score, arena_rounds_won;
     editinfo *edit;
     float deltayaw, deltapitch, deltaroll, newyaw, newpitch, newroll;
     int smoothmillis;
@@ -563,7 +566,7 @@ struct fpsent : dynent, fpsstate
 
     vec muzzle;
 
-    fpsent() : weight(100), clientnum(-1), privilege(PRIV_NONE), lastupdate(0), plag(0), ping(0), lifesequence(0), respawned(-1), suicided(-1), lastpain(0), attacksound(-1), attackchan(-1), idlesound(-1), idlechan(-1), frags(0), flags(0), deaths(0), totaldamage(0), totalshots(0), edit(NULL), smoothmillis(-1), playermodel(-1), ai(NULL), ownernum(-1), muzzle(-1, -1, -1)
+    fpsent() : weight(100), clientnum(-1), privilege(PRIV_NONE), lastupdate(0), plag(0), ping(0), lifesequence(0), respawned(-1), suicided(-1), lastpain(0), attacksound(-1), attackchan(-1), idlesound(-1), idlechan(-1), frags(0), flags(0), deaths(0), totaldamage(0), totalshots(0), arena_round_score(0), arena_rounds_won(0), edit(NULL), smoothmillis(-1), playermodel(-1), ai(NULL), ownernum(-1), muzzle(-1, -1, -1)
     {
         name[0] = team[0] = info[0] = 0;
         respawn();
@@ -639,6 +642,8 @@ struct teaminfo
 {
     char team[MAXTEAMLEN+1];
     int frags;
+    int arena_round_score;
+    int arena_rounds_won;
 };
 
 static inline uint hthash(const teaminfo &t) { return hthash(t.team); }
@@ -938,6 +943,7 @@ namespace server
         int lastshot;
         projectilestate<8> rockets, grenades;
         int frags, flags, deaths, teamkills, shotdamage, damage, tokens;
+        int arena_round_score, arena_rounds_won;
         int lasttimeplayed, timeplayed;
         float effectiveness;
 
@@ -963,6 +969,7 @@ namespace server
             timeplayed = 0;
             effectiveness = 0;
             frags = flags = deaths = teamkills = shotdamage = damage = tokens = 0;
+            arena_round_score = arena_rounds_won = 0;
 
             lastdeath = lifesequence = 0;
 
@@ -992,6 +999,7 @@ namespace server
         uint ip;
         string name;
         int maxhealth, frags, flags, deaths, teamkills, shotdamage, damage;
+        int arena_round_score, arena_rounds_won;
         int timeplayed;
         float effectiveness;
 
@@ -1000,6 +1008,8 @@ namespace server
             maxhealth = gs.maxhealth;
             frags = gs.frags;
             flags = gs.flags;
+            arena_round_score = gs.arena_round_score;
+            arena_rounds_won = gs.arena_rounds_won;
             deaths = gs.deaths;
             teamkills = gs.teamkills;
             shotdamage = gs.shotdamage;
@@ -1014,6 +1024,8 @@ namespace server
             gs.maxhealth = maxhealth;
             gs.frags = frags;
             gs.flags = flags;
+            gs.arena_round_score = arena_round_score;
+            gs.arena_rounds_won = arena_rounds_won;
             gs.deaths = deaths;
             gs.teamkills = teamkills;
             gs.shotdamage = shotdamage;
@@ -1195,7 +1207,7 @@ namespace server
     } dmo_tag;
 
     extern vector<dmo_tag> dmo_tags;
-    extern int persistentintermission, persistentteams, pauseondisconnect, mutespectators, racemode;
+    extern int persistentintermission, persistentteams, pauseondisconnect, mutespectators, racemode, arenamode;
 
     extern char *serverdesc;
 

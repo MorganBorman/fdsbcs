@@ -82,6 +82,12 @@ struct ctfclientmode : clientmode
     vector<flag> flags;
     int scores[2];
 
+    bool hasflag(clientinfo *ci)
+    {
+    	loopv(flags) if(flags[i].owner==ci->clientnum) return true;
+    	return false;
+    }
+
     void resetflags()
     {
         holdspawns.shrink(0);

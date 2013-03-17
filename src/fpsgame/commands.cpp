@@ -485,8 +485,34 @@ namespace server
         }
     }
 
+    void cmd_arenamode(clientinfo *ci, vector<char*> args)
+    {
+    	if(!allow_arenamode) {
+            sendcnservmsg(ci->clientnum, "\fs\f3Error:\fr Usage: \fs\f2Arena mode cannot be enabled on this server.\fr");
+            return;
+    	}
+
+    	int v = -1;
+        if(args.length() >= 2) v = parse_toggle_arg(args[1], &server::arenamode);
+
+        if(!v){
+        	sendservmsgf("\fs\f1Info:\fr Arena mode \fs\f0%s\fr by \fs\f0%s\fr.", server::arenamode ? "enabled" : "disabled" , colorname(ci));
+        }
+        else if(v == -1) {
+        	sendcnservmsg(ci->clientnum, "\fs\f3Error:\fr Usage: \fs\f2arenamode <enable/disable>\fr");
+        }
+        else if(v == 1) {
+        	sendcnservmsgf(ci->clientnum, "\fs\f3Error:\fr State: Arena mode is already \fs\f0%s\fr.", server::arenamode ? "enabled" : "disabled");
+        }
+    }
+
     void cmd_instaweapon(clientinfo *ci, vector<char*> args)
     {
+    	if(!allow_instaweapon) {
+            sendcnservmsg(ci->clientnum, "\fs\f3Error:\fr Usage: \fs\f2The instaweapon cannot be set on this server.\fr");
+            return;
+    	}
+
         if(args.length() < 2)
         {
             sendcnservmsg(ci->clientnum, "\fs\f3Error:\fr Usage: \fs\f2instaweapon <weapon num>\fr");
@@ -629,6 +655,7 @@ namespace server
         {"pauseondisconnect", PRIV_MASTER, &cmd_pauseondisconnect},
 
         {"racemode", PRIV_MASTER, &cmd_racemode},
+        {"arenamode", PRIV_MASTER, &cmd_arenamode},
         {"instaweapon", PRIV_MASTER, &cmd_instaweapon},
 
         {"tagdemo", PRIV_NONE, &cmd_tagdemo},

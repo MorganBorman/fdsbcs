@@ -49,11 +49,22 @@ namespace server
     int pauseondisconnect = 0;
     int mutespectators = 0;
     int racemode = 0;
+
+    int arenamode = 0;
+    VAR(allow_arenamode, 0, 0, 1);
+    const int arenamode_round_score_limit = 5;
+    const int arena_round_player_score_limit = 15;
+    int arena_fight_time = 0;
+    int arena_fight_counter = 0;
+
     int persistentintermission, persistentteams, interm = 0;
     enet_uint32 lastsend = 0;
     int mastermode = MM_OPEN, mastermask = MM_PRIVSERV;
     stream *mapdata = NULL;
+
     int instaweapon = GUN_RIFLE;
+    VAR(allow_instaweapon, 0, 0, 1);
+
     int resumedelay = 0;
     int resumetime = 0;
     int resumecounter = 0;
@@ -541,6 +552,7 @@ namespace server
         virtual void setup() {}
         virtual void newmap() {}
         virtual void intermission() {}
+        virtual bool hasflag(clientinfo *ci) {return false;}
         virtual bool hidefrags() { return false; }
         virtual int getteamscore(const char *team) { return 0; }
         virtual void getteamscores(vector<teamscore> &scores) {}
@@ -636,6 +648,8 @@ namespace server
             t = &teaminfos[team];
             copystring(t->team, team, sizeof(t->team));
             t->frags = 0;
+            t->arena_round_score = 0;
+            t->arena_rounds_won = 0;
         }
         return t;
     }
@@ -717,6 +731,90 @@ namespace server
                 setteam(ci, teamnames[i], -1);
             }
         }
+    }
+
+    void sendspawn(clientinfo *ci);
+
+    void arena_fight_sound()
+    {
+    	loopv(clients) sendf(clients[i]->clientnum, 1, "iiuii", N_CLIENT, clients[i]->clientnum, 2, N_SOUND, S_V_FIGHT);
+    }
+
+    void arenamode_team_won(clientinfo *winner)
+    {
+		winner->state.arena_round_score++;
+    	if(m_teammode) {
+    		teaminfo *t = teaminfos.access(winner->team);
+    		t->arena_round_score++;
+    		int team = 0;
+    		if(!strcmp(winner->team, "good")) team = 1;
+    		else if(!strcmp(winner->team, "evil")) team = 2;
+    		if(t->arena_round_score >= arenamode_round_score_limit) {
+    			sendservmsgf("team %s has won the round.", winner->team);
+    			t->arena_round_score = 0;
+    			t->arena_rounds_won++;
+    		}
+    		sendf(-1, 1, "rii9", N_SCOREFLAG, winner->clientnum, 0, -1, 0, 0, 0, team, t->arena_round_score, winner->state.arena_round_score);
+			if(t->arena_rounds_won>=2) {
+				sendservmsgf("team %s has won the game.", winner->team);
+				startintermission();
+				return;
+			}
+    	} else {
+    		if(winner->state.arena_round_score >= arena_round_player_score_limit) {
+    			sendservmsgf("%s has won the round.", winner->name);
+    			winner->state.arena_round_score = 0;
+    			winner->state.arena_rounds_won++;
+    		}
+    		if(winner->state.arena_rounds_won>=2) {
+				sendservmsgf("%s has won the game.", winner->name);
+				startintermission();
+				return;
+			}
+    	}
+
+    	arena_fight_time = gamemillis + 3000;
+    	arena_fight_counter = 3;
+		loopv(clients) if(clients[i]->state.state!=CS_SPECTATOR) {
+            clients[i]->state.respawn();
+			sendspawn(clients[i]);
+		}
+    }
+
+    void arenamode_died(clientinfo *victim, clientinfo *actor)
+    {
+    	int othersalive = 0;
+    	loopv(clients) {
+    		if(actor != NULL && clients[i]->clientnum==actor->clientnum) continue;
+    		if(clients[i]->clientnum==victim->clientnum) continue;
+    		if(!clients[i]->state.isalive(gamemillis)) continue;
+    		if((m_teammode && strcmp(clients[i]->team, victim->team))) continue;
+    		if(actor == NULL) actor = clients[i];
+    		othersalive++;
+    	}
+    	if(!othersalive) arenamode_team_won(actor);
+    }
+
+    void arenamode_update()
+    {
+    	bool no_winner = false;
+    	clientinfo *alive_client = NULL;
+
+    	loopv(clients) {
+    		if(!clients[i]->state.isalive(gamemillis)) continue;
+
+    		if(alive_client) {
+    			if(m_teammode) {
+    				if(strcmp(clients[i]->team, alive_client->team)) no_winner = true;
+    			}
+    			else {
+    				no_winner = true;
+    			}
+    		}
+    		else alive_client = clients[i];
+    	}
+
+    	if(!no_winner && alive_client) arenamode_team_won(alive_client);
     }
 
     struct teamrank
@@ -1925,7 +2023,9 @@ namespace server
 
     void dodamage(clientinfo *target, clientinfo *actor, int damage, int gun, const vec &hitpush = vec(0, 0, 0))
     {
+    	if(arenamode && arena_fight_time) return;
         gamestate &ts = target->state;
+        if(arenamode && smode && smode->hasflag(target)) damage /= 2;
         ts.dodamage(damage);
         if(target!=actor && !isteam(target->team, actor->team)) actor->state.damage += damage;
         sendf(-1, 1, "ri6", N_DAMAGE, target->clientnum, actor->clientnum, damage, ts.armour, ts.health);
@@ -1949,10 +2049,11 @@ namespace server
                 actor->state.effectiveness += fragvalue*friends/float(max(enemies, 1));
             }
             teaminfo *t = m_teammode ? teaminfos.access(actor->team) : NULL;
-            if(t) t->frags += fragvalue; 
+            if(t) t->frags += fragvalue;
             sendf(-1, 1, "ri5", N_DIED, target->clientnum, actor->clientnum, actor->state.frags, t ? t->frags : 0);
             target->position.setsize(0);
             if(smode) smode->died(target, actor);
+            if(arenamode) arenamode_died(target, actor);
             ts.state = CS_DEAD;
             ts.lastdeath = gamemillis;
             if(actor!=target && isteam(actor->team, target->team)) 
@@ -2154,9 +2255,29 @@ namespace server
     		resumetime = 0;
     	}
 
-        if(shouldstep && !gamepaused)
+		if(arena_fight_time && ((arena_fight_time - gamemillis)/1000) < arena_fight_counter)
+		{
+			sendservmsgf("\fs\f0%d\fr", arena_fight_counter);
+			arena_fight_counter--;
+		}
+
+    	if (arena_fight_time && arena_fight_time < gamemillis)
+    	{
+    		sendservmsg("\fs\f3Fight!\fr");
+    		arena_fight_sound();
+    		arena_fight_time = 0;
+    	}
+
+    	if(arenamode && !interm && clients.length() > 1 && !arena_fight_time) arenamode_update();
+
+    	if(shouldstep && !gamepaused)
         {
-            gamemillis += curtime;
+    		gamemillis += curtime;
+
+    		if(arenamode && !interm) {
+    			gamelimit = gamemillis + 1000;
+    			sendf(-1, 1, "ri2", N_TIMEUP, gamemillis < gamelimit && !interm ? max((gamelimit - gamemillis)/1000, 1) : 0);
+    		}
 
             if(m_demo) readdemo();
             else if(!m_timed || gamemillis < gamelimit)
@@ -2984,6 +3105,10 @@ namespace server
 
             case N_TRYSPAWN:
                 if(!ci || !cq || cq->state.state!=CS_DEAD || cq->state.lastspawn>=0 || (smode && !smode->canspawn(cq))) break;
+                if(arenamode) {
+                	sendcnservmsg(ci->clientnum, "You must wait for the next round to respawn.");
+                	break;
+                }
                 if(!ci->clientmap[0] && !ci->mapcrc)
                 {
                     ci->mapcrc = -1;

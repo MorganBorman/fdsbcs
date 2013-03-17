@@ -2076,7 +2076,7 @@ namespace server
             }
             teaminfo *t = m_teammode ? teaminfos.access(actor->team) : NULL;
             if(t) t->frags += fragvalue;
-            if(!arenamode) sendf(-1, 1, "ri5", N_DIED, target->clientnum, actor->clientnum, actor->state.frags, t ? t->frags : 0);
+            sendf(-1, 1, "ri5", N_DIED, target->clientnum, actor->clientnum, actor->state.frags, t ? t->frags : 0);
             target->position.setsize(0);
             if(smode) smode->died(target, actor);
             if(arenamode) arenamode_died(target, actor);
@@ -2102,7 +2102,7 @@ namespace server
         ci->state.deaths++;
         teaminfo *t = m_teammode ? teaminfos.access(ci->team) : NULL;
         if(t) t->frags += fragvalue;
-        if(!arenamode) sendf(-1, 1, "ri5", N_DIED, ci->clientnum, ci->clientnum, gs.frags, t ? t->frags : 0);
+        sendf(-1, 1, "ri5", N_DIED, ci->clientnum, ci->clientnum, gs.frags, t ? t->frags : 0);
         ci->position.setsize(0);
         if(smode) smode->died(ci, NULL);
         gs.state = CS_DEAD;
@@ -2294,7 +2294,7 @@ namespace server
     		arena_fight_time = 0;
     	}
 
-    	if(arenamode && !interm && !arena_fight_time) arenamode_update();
+    	if(arenamode && clients.length() > 1 && !interm && !arena_fight_time) arenamode_update();
 
     	if(shouldstep && !gamepaused)
         {

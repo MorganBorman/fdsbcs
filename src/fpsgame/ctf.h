@@ -374,7 +374,7 @@ struct ctfclientmode : clientmode
             returnflag(i);
             sendf(-1, 1, "ri4", N_RETURNFLAG, ci->clientnum, i, ++f.version);
         }
-        else
+        else if(!arenamode)
         {
             loopvj(flags) if(flags[j].owner==ci->clientnum) { scoreflag(ci, i, j); break; }
         }
@@ -386,7 +386,7 @@ struct ctfclientmode : clientmode
         loopv(flags)
         {
             flag &f = flags[i];
-            if(f.owner<0 && f.droptime && lastmillis - f.droptime >= RESETFLAGTIME)
+            if(f.owner<0 && f.droptime && lastmillis - f.droptime >= RESETFLAGTIME && !arenamode)
             {
                 returnflag(i, m_protect ? lastmillis : 0);
                 if(m_hold) spawnflag(i);

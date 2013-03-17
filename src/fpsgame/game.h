@@ -554,7 +554,7 @@ struct fpsent : dynent, fpsstate
     int lastpickup, lastpickupmillis, lastbase, lastrepammo, flagpickup, tokens;
     vec lastcollect;
     int frags, flags, deaths, totaldamage, totalshots;
-    int arena_round_score, arena_rounds_won;
+    int arena_round_score, arena_rounds_won, arena_second;
     editinfo *edit;
     float deltayaw, deltapitch, deltaroll, newyaw, newpitch, newroll;
     int smoothmillis;
@@ -566,7 +566,7 @@ struct fpsent : dynent, fpsstate
 
     vec muzzle;
 
-    fpsent() : weight(100), clientnum(-1), privilege(PRIV_NONE), lastupdate(0), plag(0), ping(0), lifesequence(0), respawned(-1), suicided(-1), lastpain(0), attacksound(-1), attackchan(-1), idlesound(-1), idlechan(-1), frags(0), flags(0), deaths(0), totaldamage(0), totalshots(0), arena_round_score(0), arena_rounds_won(0), edit(NULL), smoothmillis(-1), playermodel(-1), ai(NULL), ownernum(-1), muzzle(-1, -1, -1)
+    fpsent() : weight(100), clientnum(-1), privilege(PRIV_NONE), lastupdate(0), plag(0), ping(0), lifesequence(0), respawned(-1), suicided(-1), lastpain(0), attacksound(-1), attackchan(-1), idlesound(-1), idlechan(-1), frags(0), flags(0), deaths(0), totaldamage(0), totalshots(0), arena_round_score(0), arena_rounds_won(0), arena_second(0), edit(NULL), smoothmillis(-1), playermodel(-1), ai(NULL), ownernum(-1), muzzle(-1, -1, -1)
     {
         name[0] = team[0] = info[0] = 0;
         respawn();
@@ -943,7 +943,7 @@ namespace server
         int lastshot;
         projectilestate<8> rockets, grenades;
         int frags, flags, deaths, teamkills, shotdamage, damage, tokens;
-        int arena_round_score, arena_rounds_won;
+        int arena_round_score, arena_rounds_won, arena_second;
         int lasttimeplayed, timeplayed;
         float effectiveness;
 
@@ -969,7 +969,7 @@ namespace server
             timeplayed = 0;
             effectiveness = 0;
             frags = flags = deaths = teamkills = shotdamage = damage = tokens = 0;
-            arena_round_score = arena_rounds_won = 0;
+            arena_round_score = arena_rounds_won = arena_second = 0;
 
             lastdeath = lifesequence = 0;
 

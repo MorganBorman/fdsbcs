@@ -799,11 +799,13 @@ namespace server
 
     void arenamode_update()
     {
+    	int total_clients = 0;
     	bool no_winner = false;
     	clientinfo *alive_client = NULL;
 
     	loopv(clients) {
     		if(!clients[i]->state.isalive(gamemillis)) continue;
+    		total_clients++;
 
     		if(alive_client) {
     			if(m_teammode) {
@@ -816,7 +818,7 @@ namespace server
     		else alive_client = clients[i];
     	}
 
-    	if(!no_winner && alive_client) arenamode_team_won(alive_client);
+    	if(!no_winner && total_clients > 1 && alive_client) arenamode_team_won(alive_client);
     }
 
     struct teamrank

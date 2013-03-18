@@ -238,6 +238,17 @@ struct ctfclientmode : clientmode
         notgotflags = !empty;
     }
 
+    void arena_resetflags()
+    {
+    	loopv(flags) {
+            flag &f = flags[i];
+            spawnflag(i);
+            f.owner = -1;
+            f.version = 0;
+            sendf(-1, 1, "ri6", N_RESETFLAG, i, f.version, f.spawnindex, 0, 0);
+    	}
+    }
+
     void cleanup()
     {
         reset(false);
@@ -357,13 +368,15 @@ struct ctfclientmode : clientmode
     {
         if(notgotflags || !flags.inrange(i) || ci->state.state!=CS_ALIVE || !ci->team[0]) return;
         flag &f = flags[i];
-        if((m_hold ? f.spawnindex < 0 : !ctfflagteam(f.team)) || f.owner>=0 || f.version != version || (f.droptime && f.dropper == ci->clientnum && f.dropcount >= 1)) return;
+        if(!arenamode) { // Arena mode has much less stringent requirements for picking up the flag
+        	if((m_hold ? f.spawnindex < 0 : !ctfflagteam(f.team)) || f.owner>=0 || f.version != version || (f.droptime && f.dropper == ci->clientnum && f.dropcount >= 1)) return;
+        }
         int team = ctfteamflag(ci->team);
         if(m_hold || m_protect == (f.team==team))
         {
             loopvj(flags) if(flags[j].owner==ci->clientnum) return;
             ownflag(i, ci->clientnum, lastmillis);
-            sendf(-1, 1, "ri4", N_TAKEFLAG, ci->clientnum, i, ++f.version);
+            sendf(-1, 1, "ri4", N_TAKEFLAG, ci->clientnum, i, arenamode ? 0 : ++f.version);
         }
         else if(m_protect)
         {

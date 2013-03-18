@@ -743,19 +743,32 @@ namespace server
     void arenamode_team_won(clientinfo *winner)
     {
 		winner->state.arena_round_score++;
+		sendf(-1, 1, "ri5", N_DIED, -1, winner->clientnum, winner->state.arena_round_score, 0);
     	if(m_teammode) {
-    		teaminfo *t = teaminfos.access(winner->team);
-    		t->arena_round_score++;
+    		teaminfo *wt = teaminfos.access(winner->team);
+    		wt->arena_round_score++;
+
     		int team = 0;
     		if(!strcmp(winner->team, "good")) team = 1;
     		else if(!strcmp(winner->team, "evil")) team = 2;
-    		if(t->arena_round_score >= arenamode_round_score_limit) {
+
+    		if(wt->arena_round_score >= arenamode_round_score_limit) {
     			sendservmsgf("team %s has won the round.", winner->team);
-    			t->arena_round_score = 0;
-    			t->arena_rounds_won++;
+    			wt->arena_rounds_won++;
+    			if(wt->arena_rounds_won < 2) {
+    	            enumerates(teaminfos, teaminfo, t,
+    					t.arena_round_score = 0;
+    	            );
+    			}
     		}
-    		sendf(-1, 1, "rii9", N_SCOREFLAG, winner->clientnum, 0, -1, 0, 0, 0, team, t->arena_round_score, winner->state.arena_round_score);
-			if(t->arena_rounds_won >= 2) {
+    		// Send the updated team scores
+            enumerates(teaminfos, teaminfo, t,
+            	sendf(-1, 1, "risii", N_TEAMINFO, t.team, t.arena_round_score, 0);
+            );
+
+    		sendf(-1, 1, "rii9", N_SCOREFLAG, winner->clientnum, 0, -1, 0, 0, 0, team, wt->arena_round_score, winner->state.arena_round_score);
+
+			if(wt->arena_rounds_won >= 2) {
 				sendservmsgf("team %s has won the game.", winner->team);
 				startintermission();
 				return;
@@ -764,9 +777,13 @@ namespace server
     		if(winner->state.arena_round_score >= arena_round_player_score_limit) {
     			sendservmsgf("%s has won the round.", winner->name);
     			winner->state.arena_rounds_won++;
-    			if(winner->state.arena_rounds_won < 2) winner->state.arena_round_score = 0;
+    			if(winner->state.arena_rounds_won < 2) {
+    				loopv(clients) {
+    					clients[i]->state.arena_round_score = 0;
+    					sendf(-1, 1, "ri5", N_DIED, -1, clients[i]->clientnum, 0, 0);
+    				}
+    			}
     		}
-    		sendf(-1, 1, "ri5", N_DIED, -1, winner->clientnum, winner->state.arena_round_score, 0);
     		if(winner->state.arena_rounds_won >= 2) {
 				sendservmsgf("%s has won the game.", winner->name);
 				startintermission();
@@ -776,6 +793,7 @@ namespace server
 
     	arena_fight_time = gamemillis + 3000;
     	arena_fight_counter = 3;
+    	if(smode == &ctfmode) ctfmode.arena_resetflags();
 		loopv(clients) if(clients[i]->state.state!=CS_SPECTATOR) {
             clients[i]->state.respawn();
 			sendspawn(clients[i]);
@@ -804,8 +822,9 @@ namespace server
     	clientinfo *alive_client = NULL;
 
     	loopv(clients) {
-    		if(!clients[i]->state.isalive(gamemillis)) continue;
+    		if(clients[i]->state.state==CS_SPECTATOR) continue;
     		total_clients++;
+    		if(!clients[i]->state.isalive(gamemillis)) continue;
 
     		if(alive_client) {
     			if(m_teammode) {
@@ -1740,7 +1759,7 @@ namespace server
         }
         if(ci && (m_demo || m_mp(gamemode)) && ci->state.state!=CS_SPECTATOR)
         {
-            if(smode && !smode->canspawn(ci, true))
+            if(!arenamode && smode && !smode->canspawn(ci, true))
             {
                 ci->state.state = CS_DEAD;
                 putint(p, N_FORCEDEATH);
@@ -2076,7 +2095,7 @@ namespace server
             }
             teaminfo *t = m_teammode ? teaminfos.access(actor->team) : NULL;
             if(t) t->frags += fragvalue;
-            sendf(-1, 1, "ri5", N_DIED, target->clientnum, actor->clientnum, actor->state.frags, t ? t->frags : 0);
+            sendf(-1, 1, "ri5", N_DIED, target->clientnum, actor->clientnum, arenamode ? actor->state.arena_round_score : actor->state.frags, t ? (arenamode ? t->arena_round_score : t->frags) : 0);
             target->position.setsize(0);
             if(smode) smode->died(target, actor);
             if(arenamode) arenamode_died(target, actor);
@@ -2102,7 +2121,7 @@ namespace server
         ci->state.deaths++;
         teaminfo *t = m_teammode ? teaminfos.access(ci->team) : NULL;
         if(t) t->frags += fragvalue;
-        sendf(-1, 1, "ri5", N_DIED, ci->clientnum, ci->clientnum, gs.frags, t ? t->frags : 0);
+        sendf(-1, 1, "ri5", N_DIED, ci->clientnum, ci->clientnum, arenamode ? gs.arena_round_score : gs.frags, t ? (arenamode ? t->arena_round_score : t->frags) : 0);
         ci->position.setsize(0);
         if(smode) smode->died(ci, NULL);
         gs.state = CS_DEAD;
@@ -3166,7 +3185,6 @@ namespace server
 
             case N_SPAWN:
             {
-				fprintf(stderr, "Got Spawn message.\n");
                 int ls = getint(p), gunselect = getint(p);
                 if(!cq || (cq->state.state!=CS_ALIVE && cq->state.state!=CS_DEAD) || ls!=cq->state.lifesequence || cq->state.lastspawn<0) break;
                 cq->state.lastspawn = -1;

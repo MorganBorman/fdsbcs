@@ -737,7 +737,10 @@ namespace server
 
     void send_sound(int num)
     {
-    	loopv(clients) sendf(clients[i]->clientnum, 1, "riiuii", N_CLIENT, clients[i]->clientnum, 2, N_SOUND, num);
+    	loopv(clients) {
+    		if(clients[i]->state.aitype!=AI_NONE) continue;
+    		sendf(clients[i]->clientnum, 1, "riiuii", N_CLIENT, clients[i]->clientnum, 2, N_SOUND, num);
+    	}
     }
 
     void arenamode_team_won(clientinfo *winner)

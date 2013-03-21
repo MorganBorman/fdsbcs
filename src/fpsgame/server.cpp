@@ -804,27 +804,14 @@ namespace server
 		if(!m_teammode) send_sound(S_FLAGSCORE);
     }
 
-    void arenamode_died(clientinfo *victim, clientinfo *actor)
-    {
-    	int othersalive = 0;
-    	loopv(clients) {
-    		if(actor != NULL && clients[i]->clientnum==actor->clientnum) continue;
-    		if(clients[i]->clientnum==victim->clientnum) continue;
-    		if(!clients[i]->state.isalive(gamemillis)) continue;
-    		if((m_teammode && strcmp(clients[i]->team, victim->team))) continue;
-    		if(actor == NULL) actor = clients[i];
-    		othersalive++;
-    	}
-    	if(!othersalive) arenamode_team_won(actor);
-    }
-
-    void arenamode_update()
+    void arenamode_update(clientinfo *killer=NULL)
     {
     	int total_clients = 0;
     	bool no_winner = false;
-    	clientinfo *alive_client = NULL;
+    	clientinfo *alive_client = killer;
 
     	loopv(clients) {
+    		if(clients[i] == alive_client) continue;
     		if(clients[i]->state.state==CS_SPECTATOR) continue;
     		total_clients++;
     		if(!clients[i]->state.isalive(gamemillis)) continue;
@@ -2101,7 +2088,7 @@ namespace server
             sendf(-1, 1, "ri5", N_DIED, target->clientnum, actor->clientnum, arenamode ? actor->state.arena_round_score : actor->state.frags, t ? (arenamode ? t->arena_round_score : t->frags) : 0);
             target->position.setsize(0);
             if(smode) smode->died(target, actor);
-            if(arenamode) arenamode_died(target, actor);
+            if(arenamode) arenamode_update(actor);
             ts.state = CS_DEAD;
             ts.lastdeath = gamemillis;
             if(actor!=target && isteam(actor->team, target->team)) 

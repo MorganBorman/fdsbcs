@@ -78,6 +78,48 @@ namespace server
 		}
     }
     
+    void send_pm(clientinfo *from, clientinfo *to, const char *text)
+    {
+    	sendf(to->clientnum, 1, "riiiis", N_CLIENT, from->clientnum, strlen(text)+2, N_TEXT, text);
+    }
+
+    void cmd_pm(clientinfo *ci, vector<char*> args)
+    {
+		if(args.length() < 2)
+		{
+			sendcnservmsg(ci->clientnum, "\fs\f3Error:\fr Usage: \fs\f2pm <cn> <message>\fr");
+			return;
+		}
+
+		int tcn = atoi(args[1]);
+		clientinfo *tci = getinfo(tcn);
+		vector<char> message;
+
+		if(!tci) {
+			invalidclient(ci);
+			return;
+		}
+
+		message.put("[PM]: ", 6);
+		loopv(args) {
+			if(i < 2) continue;
+			message.put(args[i], strlen(args[i]));
+			message.put(' ');
+		}
+		message.put('\0');
+
+        if(!hasadmingroup(ci) && !hasmastergroup(ci)) {
+        	if(!punitiveeffects::search(getclientip(ci->clientnum), punitiveeffects::MUTE)) {
+        		send_pm(ci, tci, message.getbuf());
+        	}
+        }
+        else {
+        	send_pm(ci, tci, message.getbuf());
+        }
+
+        sendcnservmsgf(ci->clientnum, "\fs\f2Info:\fr message sent to %s.", colorname(tci));
+    }
+
     void cmd_master(clientinfo *ci, vector<char*> args)
     {
         if(!hasadmingroup(ci) && !hasmastergroup(ci))
@@ -167,7 +209,7 @@ namespace server
     {
         if(!requestlocalmasterf("addeffect %s %u %s %u %u %u %s %u %u %s\n", effect_type, target_id, target_name, target_ip, target_mask, master_id, master_name, master_ip, expiry_time, reason ? reason : "unspecfied"))
         {
-            sendcnservmsg(ci->clientnum, "\fs\f3Error:\fr not connected to local master server.\fr");
+            sendcnservmsg(ci->clientnum, "\fs\f3Error:\fr not connected to local master server.");
         }
     }
 
@@ -190,7 +232,7 @@ namespace server
 
 		if(parse_ip_mask_string(args[1], &target_ip, &target_mask, &tci))
 		{
-			sendcnservmsg(ci->clientnum, "\fs\f3Error:\fr Invalid player specifier arguments\fr");
+			sendcnservmsg(ci->clientnum, "\fs\f3Error:\fr Invalid player specifier arguments");
 			return;
 		}
 
@@ -204,7 +246,7 @@ namespace server
 		{
 			if(parse_time_string(args[2], &expiry_time))
 			{
-				sendcnservmsg(ci->clientnum, "\fs\f3Error:\fr Invalid time arguments\fr");
+				sendcnservmsg(ci->clientnum, "\fs\f3Error:\fr Invalid time arguments.");
 				return;
 			}
 		}
@@ -630,6 +672,8 @@ namespace server
     command commands[] = {
         {"ip", PRIV_NONE, &cmd_ip},
         {"names", PRIV_NONE, &cmd_names},
+
+        {"pm", PRIV_NONE, &cmd_pm},
 
         {"master", PRIV_NONE, &cmd_master},
         {"admin", PRIV_NONE, &cmd_admin},

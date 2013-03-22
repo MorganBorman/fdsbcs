@@ -108,16 +108,14 @@ namespace server
 		}
 		message.put('\0');
 
-        if(!hasadmingroup(ci) && !hasmastergroup(ci)) {
-        	if(!punitiveeffects::search(getclientip(ci->clientnum), punitiveeffects::MUTE)) {
-        		send_pm(ci, tci, message.getbuf());
-        	}
-        }
-        else {
-        	send_pm(ci, tci, message.getbuf());
-        }
+		punitiveeffects::punitiveeffect *effect = punitiveeffects::search(getclientip(ci->clientnum), punitiveeffects::MUTE);
 
-        sendcnservmsgf(ci->clientnum, "\fs\f2Info:\fr message sent to %s.", colorname(tci));
+		if(effect && !hasadmingroup(ci) && !hasmastergroup(ci))
+			sendcnservmsgf(ci->clientnum, "\fs\f3Error:\fr You are currently muted. Reason: \"\fs\f4%s\fr\"", effect->reason);
+		else {
+			send_pm(ci, tci, message.getbuf());
+			sendcnservmsgf(ci->clientnum, "\fs\f2Info:\fr message sent to %s.", colorname(tci));
+		}
     }
 
     void cmd_master(clientinfo *ci, vector<char*> args)

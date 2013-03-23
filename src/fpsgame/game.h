@@ -942,7 +942,7 @@ namespace server
         int lastdeath, deadflush, lastspawn, lifesequence;
         int lastshot;
         projectilestate<8> rockets, grenades;
-        int frags, flags, deaths, teamkills, shotdamage, damage, tokens;
+        int frags, flags, deaths, suicides, teamkills, shotdamage, damage, tokens;
         int arena_round_score, arena_rounds_won, arena_second;
         int lasttimeplayed, timeplayed;
         float effectiveness;
@@ -968,7 +968,7 @@ namespace server
 
             timeplayed = 0;
             effectiveness = 0;
-            frags = flags = deaths = teamkills = shotdamage = damage = tokens = 0;
+            frags = flags = deaths = suicides = teamkills = shotdamage = damage = tokens = 0;
             arena_round_score = arena_rounds_won = arena_second = 0;
 
             lastdeath = lifesequence = 0;
@@ -998,7 +998,7 @@ namespace server
     {
         uint ip;
         string name;
-        int maxhealth, frags, flags, deaths, teamkills, shotdamage, damage;
+        int maxhealth, frags, flags, deaths, suicides, teamkills, shotdamage, damage;
         int arena_round_score, arena_rounds_won;
         int timeplayed;
         float effectiveness;
@@ -1011,6 +1011,7 @@ namespace server
             arena_round_score = gs.arena_round_score;
             arena_rounds_won = gs.arena_rounds_won;
             deaths = gs.deaths;
+            suicides = gs.suicides;
             teamkills = gs.teamkills;
             shotdamage = gs.shotdamage;
             damage = gs.damage;
@@ -1027,6 +1028,7 @@ namespace server
             gs.arena_round_score = arena_round_score;
             gs.arena_rounds_won = arena_rounds_won;
             gs.deaths = deaths;
+            gs.suicides = suicides;
             gs.teamkills = teamkills;
             gs.shotdamage = shotdamage;
             gs.damage = damage;

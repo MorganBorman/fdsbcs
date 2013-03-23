@@ -8,6 +8,46 @@
 
 namespace server
 {
+	char *human_time(unsigned long int seconds)
+	{
+		vector<char> output;
+
+		int years = seconds / YEARS;
+		int days = (seconds % YEARS) / DAYS;
+		int hours = (seconds % DAYS) / HOURS;
+		int minutes = (seconds % HOURS) / MINUTES;
+		int secs = seconds % MINUTES;
+
+		int buflen;
+		char buf[32];
+
+		if(years) {
+			buflen = snprintf(buf, 32, "%d years ", years);
+			output.put(buf, buflen);
+		}
+		if(days) {
+			buflen = snprintf(buf, 32, "%d days ", days);
+			output.put(buf, buflen);
+		}
+		if(hours) {
+			buflen = snprintf(buf, 32, "%d hours ", hours);
+			output.put(buf, buflen);
+		}
+		if(minutes) {
+			buflen = snprintf(buf, 32, "%d minutes ", minutes);
+			output.put(buf, buflen);
+		}
+		if(secs || !output.length()) {
+			buflen = snprintf(buf, 32, "%d seconds ", secs);
+			output.put(buf, buflen);
+		}
+		output[output.length()-1] = '\0';
+
+		char *ret = (char*)malloc(sizeof(char)*output.length());
+		strncpy(ret, output.getbuf(), output.length());
+		return ret;
+	}
+
     void insufficientpermissions(clientinfo *ci)
     {
         sendcnservmsg(ci->clientnum, "\fs\f3Error:\fr Insufficient permissions.");
@@ -43,7 +83,42 @@ namespace server
 		uchar* ipc = (uchar*)&ip;
 		sendcnservmsgf(ci->clientnum, "\fs\f2Info:\fr Client(%i) ip: %hhu.%hhu.%hhu.%hhu", tci->clientnum, ipc[0], ipc[1], ipc[2], ipc[3]);
     }
-    
+
+    void cmd_stats(clientinfo *ci, vector<char*> args)
+    {
+    	int tcn;
+
+    	if(args.length() < 2) tcn = ci->clientnum;
+    	else tcn = atoi(args[1]);
+
+		clientinfo *tci = getinfo(tcn);
+
+		if(!tci) {
+			invalidclient(ci);
+			return;
+		}
+
+		char *name = tci->name;
+		int frags = tci->state.frags;
+		int deaths = tci->state.deaths;
+		int suicides = tci->state.suicides;
+		int teamkills = tci->state.teamkills;
+		int accuracy = tci->state.damage*100 / (tci->state.shotdamage ? tci->state.shotdamage : 1);
+		int secondsonline = (totalmillis-tci->connectmillis)/1000;
+		char *timeonline = human_time(secondsonline);
+
+    	sendcnservmsgf(ci->clientnum, "\fs\f1Name:\f7 %s  \f1Frags:\f7 %d  \f1Deaths:\f7 %d  \f1Suicides:\f7 %d  \f1Teamkills:\f7 %d  \f1Accuracy:\f7 %d%%  \f1Online:\f7 %s\fr",
+    			name,
+    			frags,
+    			deaths,
+    			suicides,
+    			teamkills,
+    			accuracy,
+    			timeonline);
+
+    	free(timeonline);
+    }
+
     void cmd_names(clientinfo *ci, vector<char*> args)
     {
         if(!hasadmingroup(ci) && !hasmastergroup(ci))
@@ -669,6 +744,7 @@ namespace server
     
     command commands[] = {
         {"ip", PRIV_NONE, &cmd_ip},
+        {"stats", PRIV_NONE, &cmd_stats},
         {"names", PRIV_NONE, &cmd_names},
 
         {"pm", PRIV_NONE, &cmd_pm},

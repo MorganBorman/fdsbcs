@@ -748,7 +748,7 @@ namespace server
 		winner->state.arena_round_score++;
 		sendf(-1, 1, "ri5", N_DIED, -1, winner->clientnum, winner->state.arena_round_score, 0);
     	if(m_teammode) {
-    		teaminfo *wt = teaminfos.access(winner->team);
+    		teaminfo *wt = addteaminfo(winner->team);
     		wt->arena_round_score++;
 
     		int team = 0;
